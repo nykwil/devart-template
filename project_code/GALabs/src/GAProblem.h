@@ -126,16 +126,10 @@ public:
 
 	void createBlobCvGray(ofxCvGrayscaleImage& cvImg);
 	void createBlobImage(ImageCache& img);
-	void createBlobs();
-
+	void createBlobs(float threshold);
 	float getThreshold() {
 		return threshold;
 	}
-	void setThreshold(float thresh) {
-		changed = true;
-		threshold = thresh;
-	}
-	bool changed;
 
 private:
 	float threshold;

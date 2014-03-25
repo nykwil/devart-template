@@ -125,13 +125,13 @@ void GAProblem::setup()
     mLayerValues.push_back(vector<float>());
 
     mGALib.setFitness(this, &GAProblem::fitnessTest);
-    mCompMethod = 8;
+    mCompMethod = 5;
 	mUseDna = true;
 	bFlattenAndSave = true;
 
-    mCompareWidth = 200;
-    mCompareHeight = 200;
-    mRepeat = 1;
+    mCompareWidth = 400;
+    mCompareHeight = 400;
+    mRepeat = 10;
     mImgCompare.resize(mCompareWidth, mCompareHeight);
     mCL.buildPalette(mImgCompare);
     setRanges();
@@ -319,7 +319,7 @@ void GAProblem::go()
 		if (!mGALib.started) {
 			mGALib.setup(mRanges, mRepeat, mPopSize, mNGen);
 		}
-        float result = mGALib.run(10);
+        float result = mGALib.run(1);
 		float fit = fitnessTest(mGALib.mOut);
 		mWorkingPixels.clear();
 		createPixels(mWorkingPixels, mGALib.mOut, mLayers.back());
@@ -513,8 +513,8 @@ void StrokeProblem::createPixels(ofPixelsRef pixResult, const vector<float>& val
 void StrokeProblem::setup()
 {
 	GAProblem::setup();
-	mBrush[0].loadImage(ofToDataPath("brushtest.png"));
-	mBrush[1].loadImage(ofToDataPath("softbrush2.png"));
+//	mBrush[0].loadImage(ofToDataPath("brushtest.png"));
+//	mBrush[1].loadImage(ofToDataPath("softbrush2.png"));
 	//    mBrush[1].loadImage(ofToDataPath("circlebrush.png"));
 }
 
@@ -522,19 +522,21 @@ int gSmoothingSize = 1;
 float gSmoothingShape = 0;
 float gMinSize =  500;
 float gMaxSize = 40000;
-float gThreshold = 200;
-bool gRecalculate = false;
 int gConsider = 250;
 float gTolerance = 1.0f;
-float gMinThresh = 100;
-float gMaxThresh = 1000;
+float gMinThresh = 0;
+float gMaxThresh = 250.0f;
+float gThreshThresh = 50.0f;
+
+bool gDebugOn = false;
+float gDebugThresh = 500;
+float gDebugImage = 0;
 
 void CollageProblem::setup()
 {
 	GAProblem::setup();
 
-	mCompMethod = 7;
-	gRecalculate = false;
+	mCompMethod = 5;
 	mUseDna = true;
 	bFlattenAndSave = true;
 	width = mImgOrig.getWidth();
@@ -543,8 +545,6 @@ void CollageProblem::setup()
 	gui.addSlider("CompMethod", mCompMethod, 0, 9);
 	gui.addToggle("UseDna", mUseDna);
 	gui.addToggle("FlattenAndSave", bFlattenAndSave);
-	gui.addToggle("reclculate", gRecalculate);
-	gui.addSlider("threshold", gThreshold, 0.0f, 500.0f);
 	gui.addSlider("consider", gConsider, 0.0f, 500.0f);
 	gui.addSlider("minsize", gMinSize, 0.0f, 1000.0f);
 	gui.addSlider("maxsize", gMaxSize, 0.0f, 40000.0f);
@@ -552,9 +552,17 @@ void CollageProblem::setup()
 	gui.addSlider("smoothingShape", gSmoothingShape, 0.0f, 1.0f);
 	gui.addSlider("tolerance", gTolerance, 0.0f, 10.0f);
 
+	gui.addSlider("MinThresh", gMinThresh, 0.0f, 1000.0f);
+	gui.addSlider("MaxThresh", gMaxThresh, 0.0f, 1000.0f);
+	gui.addSlider("gThreshThresh", gThreshThresh, 0.0f, 100.0f);
+
+	gui.addToggle("gDebugOn", gDebugOn);
+	gui.addSlider("gDebugThresh", gDebugThresh, 0.0f, 1.0f);
+	gui.addSlider("gDebugImage", gDebugImage, 0.0f, 0.99999f);
+
 	mImages.resize(5);
 	for (int i = 0; i < mImages.size(); ++i) {
-		mImages[i].loadImage("source/img" + ofToString(i) + ".jpg", width, height);
+		mImages[i].loadImage("source/img (" + ofToString(i + 1) + ").jpg", width, height);
 	}
 
 	mFbo.allocate(width, height);
@@ -587,20 +595,21 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 	}
 }
 
-void ImageCache::createBlobs() {
+void ImageCache::createBlobs(float threshold) {
 	for (int i = 0; i < blobs.size(); ++i) {
 		delete blobs[i];
 	}
 	blobs.clear();
 
 	cvImgGrayscale.setFromColorImage(cvImgColor);
-	cvImgGrayscale.threshold(gThreshold, true);
+	cvImgGrayscale.threshold(threshold, true);
 	createBlobCvGray(cvImgGrayscale);
 
 	cvImgGrayscale.setFromColorImage(cvImgColor);
-	cvImgGrayscale.threshold(gThreshold, false);
+	cvImgGrayscale.threshold(threshold, false);
 	createBlobCvGray(cvImgGrayscale);
-	changed = false;
+
+	this->threshold = threshold;
 }
 
 void ImageCache::loadImage(string filename, float width, float height)
@@ -633,7 +642,7 @@ void CollageProblem::setRanges()
 	mRanges[RT_X] = RangeInfo(4, 0.f, mImgOrig.getWidth()); // x
 	mRanges[RT_Y] = RangeInfo(4, 0.f, mImgOrig.getHeight()); // y
 	mRanges[RT_DEG] = RangeInfo(4, 0.f, 360.0f); // y
-	mRanges[RT_SCALE] = RangeInfo(4, 0.25f, 2.0f); // y
+	mRanges[RT_SCALE] = RangeInfo(4, 0.5f, 2.0f); // y
 	mRanges[RT_IMAGE] = RangeInfo(4, 0.f, 0.99999f); // y
 	mRanges[RT_TRESH] = RangeInfo(4, 0.f, 1.0f); // y
 	mRanges[RT_BLOB] = RangeInfo(4, 0.f, 0.99999f); // image
@@ -645,48 +654,57 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 		return;
 
 	mFbo.begin();
+	// start draw
 	ofFill();
-	ofSetColor(255);
-	baseImage.draw(0, 0);
 
-	float x = values[0];
-	float y = values [1];
-	float deg = values[2];
-	float scale = values[3];
-	ImageCache& image = mImages[values[RT_IMAGE] * mImages.size()];
-
-	float thresh = ofMap(values[RT_TRESH], 0, 1, gMinThresh, gMaxThresh);
-	if (image.getThreshold() != thresh) {
-		image.setThreshold(thresh);
-		image.createBlobs();
+	if (gDebugOn) {
+		ImageCache& image = mImages[gDebugImage * mImages.size()];
+		float thresh = ofMap(gDebugThresh, 0, 1, gMinThresh, gMaxThresh);
+		if (gThreshThresh < fabs(image.getThreshold() - thresh)) {
+			image.createBlobs(thresh);
+		}
+		image.cvImgGrayscale.draw(0,0);
+		for (int j = 0; j < image.blobs.size(); ++j) {
+			ofSetColor(255);
+			image.image.bind();
+			image.blobs[j]->mesh.draw(OF_MESH_FILL);
+			image.image.unbind();
+		}
 	}
+	else {
+		for (int i = 0; i < mRepeat; ++i) {
+			float x = values[i * RT_MAX + RT_X];
+			float y = values [i * RT_MAX + 1];
+			float deg = values[i * RT_MAX + 2];
+			float scale = values[i * RT_MAX + 3];
+			int iimg = (int)(values[i * RT_MAX + RT_IMAGE] * (float)mImages.size());
+			float thresh = ofMap(values[i * RT_MAX + RT_TRESH], 0, 1, gMinThresh, gMaxThresh);
 
-	if (gRecalculate) {
-		for (int i = 0; i < mImages.size(); ++i) {
-			mImages[i].createBlobs();
-			for (int j = 0; j < mImages[i].blobs.size(); ++j) {
+			ImageCache& image = mImages[iimg];
+
+			ofSetColor(255);
+			baseImage.draw(0, 0);
+			if (gThreshThresh < fabs(image.getThreshold() - thresh)) {
+				image.createBlobs(thresh);
+			}
+
+			if (image.blobs.size() > 0 ) {
+
+				int j = values[RT_BLOB] * image.blobs.size();
+
+				ofTranslate(x, y);
+				ofRotateZ(deg);
+				ofScale(scale, scale, scale);
+				ofTranslate(-image.blobs[j]->centroid.x, -image.blobs[j]->centroid.y);
 				ofSetColor(255);
-				mImages[i].image.bind();
-				mImages[i].blobs[j]->mesh.draw(OF_MESH_FILL);
-				mImages[i].image.unbind();
+				image.image.bind();
+				image.blobs[j]->mesh.draw(OF_MESH_FILL);
+				image.image.unbind();
 			}
 		}
-		// recalculate = false;
 	}
 
-	if (image.blobs.size() > 0 ) {
-		int j = values[RT_BLOB] * image.blobs.size();
-
-		ofTranslate(x, y);
-		ofRotateZ(deg);
-		ofScale(scale, scale, scale);
-		ofTranslate(-image.blobs[j]->centroid.x, -image.blobs[j]->centroid.y);
-		ofSetColor(255);
-		image.image.bind();
-		image.blobs[j]->mesh.draw(OF_MESH_FILL);
-		image.image.unbind();
-	}
-
+	// end draw
 	mFbo.end();
 	mFbo.readToPixels(pixResult);
 }
