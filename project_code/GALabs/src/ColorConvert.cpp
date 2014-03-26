@@ -635,3 +635,4 @@ ColorRGB ColorYIQ::toRGB()
         this->Y - i * 1.31908708412142932f - q * 1.78178677298826495f,
         this->clamped);
 }
+
