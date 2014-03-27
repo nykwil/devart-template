@@ -8,7 +8,7 @@ float gSmoothingShape = 0;
 float gMinSize =  500;
 float gMaxSize = 40000;
 int gConsider = 250;
-float gTolerance = 1.0f;
+float gTolerance = 0.1f;
 float gMinThresh = 0;
 float gMaxThresh = 250.0f;
 float gThreshThresh = 50.0f;
@@ -17,15 +17,11 @@ bool gDebugOn = false;
 float gDebugThresh = 500;
 float gDebugImage = 0;
 
-void CollageProblem::setup()
+CollageProblem::CollageProblem() : GAProblem()
 {
-	GAProblem::setup();
-
 	mCompMethod = 7;
 	mUseDna = true;
 	bFlattenAndSave = true;
-	width = mImgOrig.getWidth();
-	height = mImgOrig.getHeight();
 	mRepeat = 1;
 	mPopSize = 200;
 	mNGen = 200;
@@ -47,10 +43,19 @@ void CollageProblem::setup()
 	gui.addToggle("gDebugOn", gDebugOn);
 	gui.addSlider("gDebugThresh", gDebugThresh, 0.0f, 1.0f);
 	gui.addSlider("gDebugImage", gDebugImage, 0.0f, 0.99999f);
+}
 
-	mImages.resize(8);
-	for (int i = 0; i < mImages.size(); ++i) {
-		mImages[i].loadImage("source/img (" + ofToString(i + 1) + ").jpg", width, height);
+void CollageProblem::setup()
+{
+	GAProblem::setup();
+
+	ofDirectory dir(rootDir + "source/");
+	dir.allowExt("jpg");
+	int nd = dir.listDir();
+
+	mImages.resize(nd);
+	for (int i = 0; i < nd; ++i) {
+		mImages[i].loadImage(dir.getPath(i));
 	}
 
 	mFbo.allocate(width, height);
@@ -100,13 +105,17 @@ void ImageCache::createBlobs(float threshold) {
 	this->threshold = threshold;
 }
 
-void ImageCache::loadImage(string filename, float width, float height)
+void ImageCache::loadImage(const string& filename)
 {
 	image.loadImage(filename);
-	float diff = image.getWidth() / image.getHeight();
-	image.resize(width, height / diff);
+
+	if (image.getWidth() > 800) {
+		float diff = image.getWidth() / image.getHeight();
+		image.resize(800, 800 / diff);
+	}
 
 	cvImgColor.setFromPixels(image.getPixelsRef());
+	this->threshold = -1000; // so that it recalcs
 
 	if (cvImgGrayscale.getWidth() == cvImgColor.getWidth() || cvImgGrayscale.getHeight() != cvImgColor.getHeight())
 		cvImgGrayscale.allocate(cvImgColor.getWidth(), cvImgColor.getHeight());
@@ -127,10 +136,10 @@ void CollageProblem::setRanges()
 {
 	mRanges.resize(RT_MAX);
 
-	mRanges[RT_X] = RangeInfo(4, 10.f, mImgOrig.getWidth() - 10.f); // x
-	mRanges[RT_Y] = RangeInfo(4, 10.f, mImgOrig.getHeight() - 10.f); // y
+	mRanges[RT_X] = RangeInfo(4, 0, 1.f); // x
+	mRanges[RT_Y] = RangeInfo(4, 0, 1.f); // y
 	mRanges[RT_DEG] = RangeInfo(4, 0.f, 360.0f); // y
-	mRanges[RT_SCALE] = RangeInfo(4, 0.5f, 2.0f); // y
+	mRanges[RT_SCALE] = RangeInfo(4, 0.5f, 1.0f); // y
 	mRanges[RT_IMAGE] = RangeInfo(4, 0.f, 0.99999f); // y
 	mRanges[RT_TRESH] = RangeInfo(4, 0.f, 1.0f); // y
 	mRanges[RT_BLOB] = RangeInfo(4, 0.f, 0.99999f); // image
@@ -154,17 +163,21 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 		image.cvImgGrayscale.draw(0,0);
 		for (int j = 0; j < image.blobs.size(); ++j) {
 			ofSetColor(255);
+			ofPushMatrix();
+			float scale = width / image.image.getWidth();
+			ofScale(scale, scale, scale);
 			image.image.bind();
 			image.blobs[j]->mesh.draw(OF_MESH_FILL);
 			image.image.unbind();
+			ofPopMatrix();
 		}
 	}
 	else {
 		ofSetColor(255);
 		baseImage.draw(0, 0);
 		for (int i = 0; i < mRepeat; ++i) {
-			float x = values[i * RT_MAX + RT_X];
-			float y = values [i * RT_MAX + RT_Y];
+			float x = values[i * RT_MAX + RT_X] * width;
+			float y = values [i * RT_MAX + RT_Y] * height;
 			float deg = values[i * RT_MAX + RT_DEG];
 			float scale = values[i * RT_MAX + RT_SCALE];
 			int iimg = (int)(values[i * RT_MAX + RT_IMAGE] * (float)mImages.size());
@@ -178,6 +191,8 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 			}
 			if (image.blobs.size() > 0 ) {
 				int j = values[RT_BLOB] * image.blobs.size();
+				scale = scale * width / image.image.getWidth();
+				ofPushMatrix();
 				ofTranslate(x, y);
 				ofRotateZ(deg);
 				ofScale(scale, scale, scale);
@@ -186,6 +201,7 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 				image.image.bind();
 				image.blobs[j]->mesh.draw(OF_MESH_FILL);
 				image.image.unbind();
+				ofPopMatrix();
 			}
 		}
 	}

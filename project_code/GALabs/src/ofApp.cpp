@@ -54,6 +54,7 @@ void ofApp::setup() {
 
 	mDna = new CollageProblem();
 	mDna->setup();
+
 	gui.setup();
 	gui.setDefaultKeys(true);
 }
@@ -81,15 +82,15 @@ void ofApp::draw() {
 
 	mDna->getWorkImg(imgWork);
 	ofSetColor(255);
-	imgWork.draw(imgWork.getWidth() + 10, 0);
+	imgWork.draw(mDna->width, 0);
 
 	ofSetColor(255);
-	mDna->mImgOrig.draw(0, mDna->mImgOrig.getHeight() + 10);
+	mDna->mImgOrig.draw(0, mDna->height);
 
 	mDna->getLastImg(imgLast);
 	if (imgLast.getWidth() > 0){
 		ofSetColor(255);
-		imgLast.draw(imgLast.getHeight() + 10, imgLast.getHeight() + 10);
+		imgLast.draw(mDna->width, mDna->height);
 	}
 	gui.draw();
 }

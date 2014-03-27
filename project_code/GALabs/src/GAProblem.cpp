@@ -6,35 +6,44 @@
 
 GAProblem::GAProblem()
 {
-}
+	rootDir = ofToDataPath("");
 
-void GAProblem::setup()
-{
-	ColorLook::instance().sort();
-
-    mImgOrig.loadImage(ofToDataPath("portr4.jpg"));
-    mImgOrig.resize(400, 400);
-    mImgCompare = mImgOrig;
-
-    mLayers.push_back(ofImage());
-    mLayers.back().loadImage(ofToDataPath("emptyblack.jpg"));
-    mLayers.back().resize(mImgOrig.getWidth(), mImgOrig.getHeight());
-    mLayerValues.push_back(vector<float>());
-
-    mGALib.setFitness(this, &GAProblem::fitnessTest);
-    mCompMethod = 5;
+	mCompMethod = 5;
 	mUseDna = true;
 	bFlattenAndSave = true;
 
 	mPopSize = 10;
 	mNGen = 10;
 
-    mCompareWidth = 200;
-    mCompareHeight = 200;
-    mRepeat = 1;
-    mImgCompare.resize(mCompareWidth, mCompareHeight);
+	mCompareWidth = 200;
+	mCompareHeight = 200;
+	mRepeat = 1;
+	width = 600;
+}
+
+void GAProblem::setup()
+{
+	ofDirectory dir(rootDir + "target/");
+	dir.allowExt("jpg");
+	int nd = dir.listDir();
+	mImgOrig.loadImage(dir.getPath(rand() % nd));
+	height = width / (mImgOrig.getWidth() / mImgOrig.getHeight());
+	mImgOrig.resize(width, height);
+
+	mImgCompare = mImgOrig;
+
+	mLayers.push_back(ofImage());
+	mLayers.back().loadImage(ofToDataPath("emptyblack.jpg")); // @TODO look at palette
+	mLayers.back().resize(width, height);
+	mLayerValues.push_back(vector<float>());
+
+	mGALib.setFitness(this, &GAProblem::fitnessTest);
+
+	mImgCompare.resize(mCompareWidth, mCompareHeight);
 	ColorLook::instance().buildPalette(mImgCompare);
-    setRanges();
+	ColorLook::instance().sort();
+
+	setRanges();
 }
 
 int ITERS_PER_UPDATE = 10;
@@ -258,7 +267,7 @@ void GAProblem::go()
     if (bFlattenAndSave) {
         static int mLevels = 0;
         while (mLayers.size() > 1) {
-            string s = "output/outimg" + ofToString(++mLevels, 2, 5, '0');
+            string s = rootDir + "output/outimg" + ofToString(++mLevels, 2, 5, '0');
             mLayers.front().saveImage(s + ".png");
             mLayers.pop_front();
             saveFloat(s + ".txt", mLayerValues.front());
@@ -277,3 +286,4 @@ void GAProblem::pushValues( const vector<float>& workingValues, const ofPixelsRe
     _mImgLast.setFromPixels(workingPixels);
     mutexLast.unlock();
 }
+

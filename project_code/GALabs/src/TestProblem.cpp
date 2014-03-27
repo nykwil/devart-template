@@ -8,7 +8,7 @@ void FboProblem::setup()
 {
     GAProblem::setup();
 
-    mFbo.allocate(mImgOrig.getWidth(), mImgOrig.getHeight());
+    mFbo.allocate(width, height);
     mFbo.begin();
     ofClear(255,255,255, 0);
     mFbo.end();
@@ -19,10 +19,10 @@ void FboProblem::setRanges()
     mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // r
     mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // g
     mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // b
-    mRanges.push_back(RangeInfo(4, 0.f, 300.f)); // x
-    mRanges.push_back(RangeInfo(4, 0.f, 300.f)); // y
-    mRanges.push_back(RangeInfo(4, 20, 50)); // z
+    mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // x
+    mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // y
     mRanges.push_back(RangeInfo(4, 20, 50)); // w
+    mRanges.push_back(RangeInfo(4, 20, 50)); // h
 }
 
 void FboProblem::drawValues( const vector<float>& values )
@@ -38,12 +38,12 @@ void FboProblem::drawValues( const vector<float>& values )
         float x = values[i++];
         float y = values[i++];
 
-        float z = values[i++];
         float w = values[i++];
+        float h = values[i++];
 
         ofFloatColor col(r,g,b);
         ofSetColor(col);
-        ofRect(x,y,z,w);
+        ofRect(x * width, y * width, w, h);
         //        ofCircle(x,y,z);
         // ofBox(x,y,z,w);
     }
@@ -70,8 +70,8 @@ void BrushProblem::setRanges()
     mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // r
     mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // g
     mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // b
-    mRanges.push_back(RangeInfo(4, 0.f, mImgOrig.getWidth())); // x
-    mRanges.push_back(RangeInfo(4, 0.f, mImgOrig.getHeight())); // y
+    mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // x
+    mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // y
     mRanges.push_back(RangeInfo(4, 20, 50)); // size
     mRanges.push_back(RangeInfo(4, 0, TWO_PI)); // ang
 }
@@ -86,8 +86,8 @@ void BrushProblem::createPixels(ofPixelsRef pixResult, const vector<float>& valu
         float r = values[i++];
         float g = values[i++];
         float b = values[i++];
-        float x = values[i++];
-        float y = values[i++];
+        float x = values[i++] * width;
+        float y = values[i++] * height;
         float sz = values[i++];
         float ang = values[i++];
         mDraw.renderBrush(pixResult, ofVec2f(x, y), mBrush[1], sz, ang, ofFloatColor(r, g, b));
@@ -104,8 +104,8 @@ void StrokeProblem::setRanges()
     //    mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // b
 
     mRanges.push_back(RangeInfo(4, -PI, PI)); // ang
-    mRanges.push_back(RangeInfo(4, 0.f, mImgOrig.getWidth())); // x
-    mRanges.push_back(RangeInfo(4, 0.f, mImgOrig.getHeight())); // y
+    mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // x
+    mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // y
 
     mRanges.push_back(RangeInfo(4, -1.f, 1.f)); // dx
     mRanges.push_back(RangeInfo(4, -1.f, 1.f)); // dy
@@ -129,8 +129,8 @@ void StrokeProblem::createPixels(ofPixelsRef pixResult, const vector<float>& val
 //        float b = values[i++];
 
         float sang = values[i++];
-        float x = values[i++];
-        float y = values[i++];
+        float x = values[i++] * width;
+        float y = values[i++] * height;
 
         float dx = values[i++] * gDeltaSize;
         float dy = values[i++] * gDeltaSize;

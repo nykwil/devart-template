@@ -28,6 +28,7 @@ class GAProblem : public ofThread
 {
 public:
     GAProblem();
+	string rootDir;
 	void pickBest(ofImage& mImg1, ofImage& mImg2);
 	float fitnessTest(const vector<float>& values);
     virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage) = 0;
@@ -35,6 +36,7 @@ public:
 
 	float compareImg(ofImage& img1, ofImage& img2, int method);
 	virtual void setup();
+
 	virtual void setRanges() = 0;
 	virtual void threadedFunction();
 	void go();
@@ -51,7 +53,10 @@ public:
 	int mPopSize;
 	int mNGen;
 
-    void getBestImg( ofImage& img );
+	float width;
+	float height;
+
+	void getBestImg( ofImage& img );
     void getWorkImg( ofImage& img );
     void getLastImg( ofImage& img );
 
@@ -122,7 +127,7 @@ public:
 	ofxCvContourFinder contourFinder;
 	ofTessellator tess;
 
-	void loadImage(string filename, float width, float height);
+	void loadImage(const string& filename);
 
 	void createBlobCvGray(ofxCvGrayscaleImage& cvImg);
 	void createBlobImage(ImageCache& img);
@@ -138,12 +143,21 @@ private:
 class CollageProblem : public GAProblem
 {
 public:
+	CollageProblem();
 	virtual void setup();
 	virtual void setRanges();
 	virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage);
 	
-	float width;
-	float height;
 	ofFbo mFbo;
 	vector<ImageCache> mImages;
+};
+
+class StripProblem : public GAProblem
+{
+public:
+	virtual void setup();
+	virtual void setRanges();
+	virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage);
+
+	ofFbo mFbo;
 };

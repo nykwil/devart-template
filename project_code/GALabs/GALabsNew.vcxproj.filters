@@ -211,6 +211,7 @@
     <ClCompile Include="src\TestProblem.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\StripProblem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
