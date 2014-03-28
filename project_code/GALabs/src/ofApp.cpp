@@ -46,17 +46,21 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 
-bool bUseCam = false;
-bool bDrawBest = true;
 bool bRun = true;
 
 void ofApp::setup() {
 
+	gui.addToggle("Run", bRun);
+	ofEnableAlphaBlending();
+
+	ofSetFrameRate(30);
 	mDna = new CollageProblem();
 	mDna->setup();
 
 	gui.setup();
 	gui.setDefaultKeys(true);
+
+	ofSetWindowShape(mDna->width * 2, mDna->height * 2);
 }
 
 void ofApp::draw() {
@@ -66,14 +70,8 @@ void ofApp::draw() {
 	static ofImage imgWork;
 	static ofImage imgLast;
 
-	if (bRun) {
+	if (bRun && !mDna->isThreadRunning()) {
 		mDna->go();
-	}
-	else if (bDrawBest && !mDna->isThreadRunning()) {
-		static vector<float> workingValues;
-
-		mDna->fillRandom(workingValues);
-		mDna->fitnessTest(workingValues);
 	}
 
 	mDna->getBestImg(imgBest);
@@ -96,20 +94,15 @@ void ofApp::draw() {
 }
 
 void ofApp::keyPressed(int key) {
-	if (key == 'c')
-		bUseCam = !bUseCam;
-	else if (key == 't') {
-		bDrawBest = !bDrawBest;
-	}
-	else if (key == 'd') {
+	if (key == 'd') {
 		bRun = !bRun; 
 	}
 	else if (key == 's') {
-		mDna->startThread(true, false);
+		// mDna->startThread(true, false);
 	}
 }
 
 void ofApp::exit()
 {
-	mDna->waitForThread(true);
+	// mDna->waitForThread(true);
 }

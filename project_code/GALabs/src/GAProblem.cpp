@@ -19,29 +19,60 @@ GAProblem::GAProblem()
 	mCompareHeight = 200;
 	mRepeat = 1;
 	width = 600;
+	mLevels = 0;
+
+	gui.addSlider("CompMethod", mCompMethod, 0, 9);
+	gui.addToggle("UseDna", mUseDna);
+	gui.addSlider("Times", mTimes, 0, 200);
+	gui.addSlider("Repeat", mRepeat, 0, 100);
+	gui.addSlider("PopSize", mPopSize, 0, 500);
+	gui.addSlider("NGen", mNGen, 0, 500);
+	gui.addToggle("FlattenAndSave", bFlattenAndSave);
 }
 
 void GAProblem::setup()
 {
-	ofDirectory dir(rootDir + "target/");
-	dir.allowExt("jpg");
-	int nd = dir.listDir();
-	mImgOrig.loadImage(dir.getPath(rand() % nd));
+	gui.loadFromXML();
+
+	{
+		ofDirectory dir(rootDir + "target/");
+		dir.allowExt("jpg");
+		int nd = dir.listDir();
+		mImgOrig.loadImage(dir.getPath(rand() % nd));
+	}
 	height = width / (mImgOrig.getWidth() / mImgOrig.getHeight());
 	mImgOrig.resize(width, height);
 
 	mImgCompare = mImgOrig;
+	mImgCompare.resize(mCompareWidth, mCompareHeight);
+	ColorLook::instance().buildPalette(mImgCompare);
+	ColorLook::instance().sort();
 
-	mLayers.push_back(ofImage());
-	mLayers.back().loadImage(ofToDataPath("emptyblack.jpg")); // @TODO look at palette
+	ofImage img;
+	{
+		ofDirectory dir(rootDir + "output/");
+		dir.allowExt("png");
+		mLevels = dir.listDir();
+		if (mLevels > 0) {
+			img.loadImage(rootDir + "output/outimg" + ofToString(mLevels, 2, 5, '0') + ".png");
+		}
+		else {
+			ofFile file(rootDir + "empty.jpg");
+			if (file.exists()) {
+				img.loadImage(ofToDataPath("empty.jpg"));
+			}
+			else {
+				img = mImgOrig;
+				img.resize(1,1);
+			}
+		}
+	}
+	mLayers.push_back(img);
+
 	mLayers.back().resize(width, height);
 	mLayerValues.push_back(vector<float>());
 
 	mGALib.setFitness(this, &GAProblem::fitnessTest);
-
-	mImgCompare.resize(mCompareWidth, mCompareHeight);
-	ColorLook::instance().buildPalette(mImgCompare);
-	ColorLook::instance().sort();
 
 	setRanges();
 }
@@ -231,17 +262,17 @@ void GAProblem::go()
 {
     static float lastFit = 0;
 
-    if (mUseDna) {
+    if (mUseDna && !gui.isOn()) {
 		if (!mGALib.started) {
 			mGALib.setup(mRanges, mRepeat, mPopSize, mNGen);
 		}
 		float startt = ofGetElapsedTimef();
-        float result = mGALib.run(1);
+        float result = mGALib.run(mTimes);
 		float endt = ofGetElapsedTimef();
 
 		cout << ("time: " + ofToString((endt - startt)* mNGen)).c_str() << endl;;
-		float fit = fitnessTest(mGALib.mOut);
 		if (mGALib.done()) {
+			float fit = fitnessTest(mGALib.mOut);
 			if (fit > lastFit) {
 				mWorkingPixels.clear();
 				createPixels(mWorkingPixels, mGALib.mOut, mLayers.back());
@@ -256,7 +287,7 @@ void GAProblem::go()
         
         fillRandom(workingValues);
         float fit = fitnessTest(workingValues);
-        if (fit > lastFit) {
+        if (fit > lastFit && !gui.isOn()) {
 			mWorkingPixels.clear();
 			createPixels(mWorkingPixels, workingValues, mLayers.back());
             pushValues(workingValues, mWorkingPixels);
@@ -265,7 +296,6 @@ void GAProblem::go()
     }
 
     if (bFlattenAndSave) {
-        static int mLevels = 0;
         while (mLayers.size() > 1) {
             string s = rootDir + "output/outimg" + ofToString(++mLevels, 2, 5, '0');
             mLayers.front().saveImage(s + ".png");

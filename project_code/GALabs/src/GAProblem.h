@@ -55,6 +55,7 @@ public:
 
 	float width;
 	float height;
+	int mLevels;
 
 	void getBestImg( ofImage& img );
     void getWorkImg( ofImage& img );
@@ -74,6 +75,7 @@ public:
     int mCompareWidth;
     int mCompareHeight;
     int mRepeat;
+	int mTimes;
 
     vector<RangeInfo> mRanges;
 };
@@ -127,7 +129,7 @@ public:
 	ofxCvContourFinder contourFinder;
 	ofTessellator tess;
 
-	void loadImage(const string& filename);
+	void loadImage(const string& filename, float maxWidth);
 
 	void createBlobCvGray(ofxCvGrayscaleImage& cvImg);
 	void createBlobImage(ImageCache& img);

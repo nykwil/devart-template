@@ -22,6 +22,10 @@ public:
 		return ofColor(r, g, b);
 	}
 
+	int getSize() {
+		return palette.size();
+	}
+
 	ofColor getPalette(float f)
 	{
 		return getColour(palette[(int)((f - 0.000001f) * palette.size())]);
