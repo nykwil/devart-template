@@ -1,16 +1,25 @@
 {
     "technologies": {
         "apis": [
-            "insert apis"
+            "v8",
+            "Custom Search JSON/Atom api"
+        ],
+        "languages": [
+            "c++"
         ],
         "platforms": [
-            "insert platforms"
+            "windows",
+            "osx"
         ],
         "toolkits": [
-            "insert toolkits"
+            "openframeworks",
+            "opencv",
+            "galib"
         ]
     },
     "themes": [
-        "insert themes"
+        "memes",
+        "genetic algorithms",
+        "protrait"
     ]
 }

@@ -21,7 +21,10 @@ On a technology side it is a openframeworks addon that demonstrates GALib and
 
 ## Images & Videos
 Results from the early prototype:
-![Example Image](project_images/pearl_earing%20(5).png?raw=true "Example Image")
+
 ![Example Image](project_images/pearl_earing.jpg?raw=true "Example Image")
+
+![Example Image](project_images/pearl_earing%20(5).png?raw=true "Example Image")
+
 
 
