@@ -1,33 +1,27 @@
-# Project Title
-Insert the name of your project
+# Survival of the Fittest
+A Gene Based Internet Trend Collage System
 
 ## Authors
-- Insert main author name, surname, github account
-- Insert other author(s) name, surname, github account (one per list element)
+- Robb Gray
 
 ## Description
-Insert a description containing about 100 to 150 words, including your motivation and the meaning behind your idea and execution. The Judges will be keen to know how your idea pushes the boundaries of code and technology. 
+The work looks to explore our obession with internet trends and celebrity, by using a gene based algorithm that emulates the same system that brings rise to them (memes).
 
-## Link to Prototype
-NOTE: If your project lives online you can add one or more links here. Make sure you have a stable version of your project running before linking it.
+The emergent asepct of it is a grotesque collages of
 
-[Example Link](http://www.google.com "Example Link")
+and turning it in on itself by creating grotesque collage art. using a genetic system like those that bring rise to memes,
 
-## Example Code
-NOTE: Wrap your code blocks or any code citation by using ``` like the example below.
-```
-function test() {
-  console.log("Printing a test");
-}
-```
+On a technology side it is a openframeworks addon that demonstrates GALib and 
+
 ## Links to External Libraries
- NOTE: You can also use this space to link to external libraries or Github repositories you used on your project.
 
-[Example Link](http://www.google.com "Example Link")
+[openframeworks](http://www.google.com "openframeworks")
+[ofxGALib](http://www.google.com "ofxGALib")
+[v8](http://www.google.com "v8")
 
 ## Images & Videos
-NOTE: For additional images you can either use a relative link to an image on this repo or an absolute link to an externally hosted image.
+Results from the early prototype:
+![Example Image](project_images/pearl_earing%20(5).png?raw=true "Example Image")
+![Example Image](project_images/pearl_earing.jpg?raw=true "Example Image")
 
-![Example Image](project_images/cover.jpg?raw=true "Example Image")
 
-https://www.youtube.com/watch?v=30yGOxJJ2PQ
