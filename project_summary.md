@@ -5,13 +5,17 @@ A Gene Based Internet Trend Collage System
 - Robb Gray
 
 ## Description
-The work looks to explore our obession with internet trends and celebrity, by using a gene based algorithm that emulates the same system that brings rise to them (memes).
+The work looks to explore our obession with internet trends (memes) and celebrity, by using a gene based algorithm that emulates the same system that brings rise to them.  
 
-The emergent asepct of it is a grotesque collages of
+Using the results of Google Trends website, the top two trends are pitted against each other to create a work for that day.
 
-and turning it in on itself by creating grotesque collage art. using a genetic system like those that bring rise to memes,
+Using v8 and the ATOM api, the google image results of the two trends are download.  One trend is marked as the portrait and the "face" search criteria is clicked, the other is marked as the source and all top 10 image results are downloaded.
 
-On a technology side it is a openframeworks addon that demonstrates GALib and 
+The algorithm starts cutting out shapes from the source images and placing them in layers in the intent to recreate the portrait.
+
+Genetic algorithms uses image similiary as it's fitness and determine the best cut out and placement.  Slowly building toward recreating the image.
+
+On a technology side I wanted to create an openframeworks addon that would demonstrates a generic aproach to image analysis based genetic art generation.
 
 ## Links to External Libraries
 
