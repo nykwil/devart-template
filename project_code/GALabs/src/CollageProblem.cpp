@@ -172,6 +172,9 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 	if (mImages.size() == 0)
 		return;
 
+	float width = baseImage.width;
+	float height = baseImage.height;
+
 	mFbo.begin();
 	// start draw
 	ofFill();
@@ -202,7 +205,7 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 			float x = values[ir * RT_MAX + RT_X] * width;
 			float y = values [ir * RT_MAX + RT_Y] * height;
 			float deg = values[ir * RT_MAX + RT_DEG];
-			float scale = values[ir * RT_MAX + RT_SCALE];
+			float scale = values[ir * RT_MAX + RT_SCALE] * (width / 600);
 			int iimg = (int)(values[ir * RT_MAX + RT_IMAGE] * (float)mImages.size());
 			float thresh = ofMap(values[ir * RT_MAX + RT_TRESH], 0, 1, gMinThresh, gMaxThresh);
 			assert(0.3f <= scale && scale <= 2.0f);
@@ -220,16 +223,6 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 				ofRotateZ(deg);
 				ofScale(scale, scale, scale);
 				ofTranslate(-image.blobs[ib]->centroid.x, -image.blobs[ib]->centroid.y);
-				for (int ih = 0; ih < 6; ++ih) {
-					ofPushMatrix();
-					ofTranslate(hexCoords[ih]);
-					ofSetColor(255, 255, 255, 150);
-					image.image.bind();
-					image.blobs[ib]->mesh.draw(OF_MESH_FILL);
-					image.image.unbind();
-					ofPopMatrix();
-				}
-
 				ofSetColor(255, 255, 255);
 				image.image.bind();
 				image.blobs[ib]->mesh.draw(OF_MESH_FILL);

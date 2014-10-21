@@ -40,6 +40,7 @@ void GAProblem::setup()
 		int nd = dir.listDir();
 		mImgOrig.loadImage(dir.getPath(rand() % nd));
 	}
+
 	height = width / (mImgOrig.getWidth() / mImgOrig.getHeight());
 	mImgOrig.resize(width, height);
 
@@ -81,42 +82,42 @@ int ITERS_PER_UPDATE = 10;
 
 float GAProblem::fitnessTest( const vector<float>& values )
 {
-    mWorkingPixels.clear();
-    createPixels(mWorkingPixels, values, mLayers.back());
+	mWorkingPixels.clear();
+	createPixels(mWorkingPixels, values, mLayers.back());
 
-    static ofImage workingImage;
-    workingImage.setFromPixels(mWorkingPixels);
-    workingImage.resize(mCompareWidth, mCompareHeight);
+	static ofImage workingImage;
+	workingImage.setFromPixels(mWorkingPixels);
+	workingImage.resize(mCompareWidth, mCompareHeight);
 
-    assert(mImgCompare.getWidth() == workingImage.getWidth() && mImgCompare.getHeight() == workingImage.getHeight());
+	assert(mImgCompare.getWidth() == workingImage.getWidth() && mImgCompare.getHeight() == workingImage.getHeight());
 
-    float fitness = compareImg(mImgCompare, workingImage, mCompMethod);
+	float fitness = compareImg(mImgCompare, workingImage, mCompMethod);
 
-    static int iter = 0;
-    if (iter % ITERS_PER_UPDATE == 0 && mutexWork.tryLock())
-    {
-        _mImgWork.setFromPixels(mWorkingPixels);
-        mutexWork.unlock();
-    }
-    ++iter;
+	static int iter = 0;
+	if (iter % ITERS_PER_UPDATE == 0 && mutexWork.tryLock())
+	{
+		_mImgWork.setFromPixels(mWorkingPixels);
+		mutexWork.unlock();
+	}
+	++iter;
 
-    if (fitness > mBestValue)
-    {
-        mutexBest.lock();
-        _mImgBest.setFromPixels(mWorkingPixels);
-        mutexBest.unlock();
+	if (fitness > mBestValue)
+	{
+		mutexBest.lock();
+		_mImgBest.setFromPixels(mWorkingPixels);
+		mutexBest.unlock();
 
-        mBestValue = fitness;
-    }
-    return fitness;
+		mBestValue = fitness;
+	}
+	return fitness;
 }
 
 void GAProblem::fillRandom(vector<float>& values)
 {
-    values.resize(mRanges.size() * mRepeat);
-    for (int i = 0; i < values.size(); ++i) {
-        values[i] = ofRandom(mRanges[i % mRanges.size()].mMin, mRanges[i % mRanges.size()].mMax);
-    }
+	values.resize(mRanges.size() * mRepeat);
+	for (int i = 0; i < values.size(); ++i) {
+		values[i] = ofRandom(mRanges[i % mRanges.size()].mMin, mRanges[i % mRanges.size()].mMax);
+	}
 }
 
 // @TODO fix
@@ -126,10 +127,10 @@ float GetBright(ofColor col) {
 
 float GAProblem::compareImg(ofImage& img1, ofImage& img2, int method)
 {
-    assert(img1.getWidth() == img2.getWidth() && img1.getHeight() == img2.getHeight());
+	assert(img1.getWidth() == img2.getWidth() && img1.getHeight() == img2.getHeight());
 
 	if (method >= 4) {
-        float diff = 0;
+		float diff = 0;
 		if (method == 7) {
 			for (int w = 0; w < img1.getWidth(); ++w) {
 				for (int h = 0; h < img1.getHeight(); ++h) {
@@ -165,9 +166,9 @@ float GAProblem::compareImg(ofImage& img1, ofImage& img2, int method)
 				}
 			}
 		}
-		
-        return diff;
-    }
+
+		return diff;
+	}
 	else {
 		static ofxCvColorImage cvi1;
 		static ofxCvColorImage cvi2;
@@ -219,36 +220,35 @@ float GAProblem::compareImg(ofImage& img1, ofImage& img2, int method)
 
 void GAProblem::threadedFunction()
 {
-    while (isThreadRunning())
-    {
-        go();
-    }
+	while (isThreadRunning()) {
+		go();
+	}
 }
 
 void GAProblem::getBestImg( ofImage& img )
 {
-    mutexBest.lock();
-    img = _mImgBest;
-    mutexBest.unlock();
+	mutexBest.lock();
+	img = _mImgBest;
+	mutexBest.unlock();
 }
 
 void GAProblem::getWorkImg( ofImage& img )
 {
-    mutexWork.lock();
-    img = _mImgWork;
-    mutexWork.unlock();
+	mutexWork.lock();
+	img = _mImgWork;
+	mutexWork.unlock();
 }
 
 void GAProblem::getLastImg( ofImage& img )
 {
-    mutexLast.lock();
+	mutexLast.lock();
 	img = _mImgLast;
-    mutexLast.unlock();
+	mutexLast.unlock();
 }
 
 void saveFloat(const string& filename, vector<float> values)
 {
-    ofFile file(filename, ofFile::Mode::WriteOnly);
+	ofFile file(filename, ofFile::Mode::WriteOnly);
 	for (int i = 0; i < values.size(); ++i) {
 		string s = ofToString(values[i]);
 		if (i != values.size() - 1) {
@@ -260,14 +260,14 @@ void saveFloat(const string& filename, vector<float> values)
 
 void GAProblem::go()
 {
-    static float lastFit = 0;
+	static float lastFit = 0;
 
-    if (mUseDna && !gui.isOn()) {
+	if (mUseDna && !gui.isOn()) {
 		if (!mGALib.started) {
 			mGALib.setup(mRanges, mRepeat, mPopSize, mNGen);
 		}
 		float startt = ofGetElapsedTimef();
-        float result = mGALib.run(mTimes);
+		float result = mGALib.run(mTimes);
 		float endt = ofGetElapsedTimef();
 
 		cout << ("time: " + ofToString((endt - startt)* mNGen)).c_str() << endl;;
@@ -281,39 +281,39 @@ void GAProblem::go()
 			}
 			mGALib.started = false;
 		}
-    }
-    else {
-        static vector<float> workingValues;
-        
-        fillRandom(workingValues);
-        float fit = fitnessTest(workingValues);
-        if (fit > lastFit && !gui.isOn()) {
+	}
+	else {
+		static vector<float> workingValues;
+
+		fillRandom(workingValues);
+		float fit = fitnessTest(workingValues);
+		if (fit > lastFit && !gui.isOn()) {
 			mWorkingPixels.clear();
 			createPixels(mWorkingPixels, workingValues, mLayers.back());
-            pushValues(workingValues, mWorkingPixels);
-            lastFit = fit;
-        }
-    }
+			pushValues(workingValues, mWorkingPixels);
+			lastFit = fit;
+		}
+	}
 
-    if (bFlattenAndSave) {
-        while (mLayers.size() > 1) {
-            string s = rootDir + "output/outimg" + ofToString(++mLevels, 2, 5, '0');
-            mLayers.front().saveImage(s + ".png");
-            mLayers.pop_front();
-            saveFloat(s + ".txt", mLayerValues.front());
-            mLayerValues.pop_front();
-        }
-    }
+	if (bFlattenAndSave) {
+		while (mLayers.size() > 1) {
+			string s = rootDir + "output/outimg" + ofToString(++mLevels, 2, 5, '0');
+			mLayers.front().saveImage(s + ".png");
+			mLayers.pop_front();
+			saveFloat(s + ".txt", mLayerValues.front());
+			mLayerValues.pop_front();
+		}
+	}
 }
 
 void GAProblem::pushValues( const vector<float>& workingValues, const ofPixelsRef workingPixels )
 {
-    mLayerValues.push_back(workingValues);
-    mLayers.push_back(ofImage());
-    mLayers.back().setFromPixels(workingPixels);
+	mLayerValues.push_back(workingValues);
+	mLayers.push_back(ofImage());
+	mLayers.back().setFromPixels(workingPixels);
 
 	mutexLast.lock();
-    _mImgLast.setFromPixels(workingPixels);
-    mutexLast.unlock();
+	_mImgLast.setFromPixels(workingPixels);
+	mutexLast.unlock();
 }
 
