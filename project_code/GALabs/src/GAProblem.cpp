@@ -73,6 +73,9 @@ void GAProblem::setup()
 	mLayers.back().resize(width, height);
 	mLayerValues.push_back(vector<float>());
 
+	mLastFinal = mLayers.back();
+	mLastWorking = mLayers.back();
+
 	mGALib.setFitness(this, &GAProblem::fitnessTest);
 
 	setRanges();
@@ -80,12 +83,15 @@ void GAProblem::setup()
 
 int ITERS_PER_UPDATE = 10;
 
-float GAProblem::fitnessTest( const vector<float>& values )
+ofImage mLastWorking;
+ofImage mLastFinal;
+ofImage workingImage;
+
+float GAProblem::fitnessTest(const vector<float>& values)
 {
 	mWorkingPixels.clear();
-	createPixels(mWorkingPixels, values, mLayers.back());
+	createPixels(mWorkingPixels, values, mLastWorking);
 
-	static ofImage workingImage;
 	workingImage.setFromPixels(mWorkingPixels);
 	workingImage.resize(mCompareWidth, mCompareHeight);
 
@@ -183,10 +189,10 @@ float GAProblem::compareImg(ofImage& img1, ofImage& img2, int method)
 		src_test = cv::cvarrToMat(cvi2.getCvImage());
 
 		/// Convert to HSV
-		cvtColor( src_base, hsv_base, CV_BGR2HSV );
-		cvtColor( src_test, hsv_test, CV_BGR2HSV );
+		cvtColor(src_base, hsv_base, CV_BGR2HSV);
+		cvtColor(src_test, hsv_test, CV_BGR2HSV);
 
-		hsv_half_down = hsv_base( cv::Range( hsv_base.rows/2, hsv_base.rows - 1 ), cv::Range( 0, hsv_base.cols - 1 ) );
+		hsv_half_down = hsv_base(cv::Range(hsv_base.rows/2, hsv_base.rows - 1), cv::Range(0, hsv_base.cols - 1));
 
 		/// Using 30 bins for hue and 32 for saturation
 		int h_bins = 50; int s_bins = 60;
@@ -207,13 +213,13 @@ float GAProblem::compareImg(ofImage& img1, ofImage& img2, int method)
 		cv::MatND hist_test;
 
 		/// Calculate the histograms for the HSV images
-		calcHist( &hsv_base, 1, channels, cv::Mat(), hist_base, 2, histSize, ranges, true, false );
-		normalize( hist_base, hist_base, 0, 1, cv::NORM_MINMAX, -1, cv::Mat() );
+		calcHist(&hsv_base, 1, channels, cv::Mat(), hist_base, 2, histSize, ranges, true, false);
+		normalize(hist_base, hist_base, 0, 1, cv::NORM_MINMAX, -1, cv::Mat());
 
-		calcHist( &hsv_test, 1, channels, cv::Mat(), hist_test, 2, histSize, ranges, true, false );
-		normalize( hist_test, hist_test, 0, 1, cv::NORM_MINMAX, -1, cv::Mat() );
+		calcHist(&hsv_test, 1, channels, cv::Mat(), hist_test, 2, histSize, ranges, true, false);
+		normalize(hist_test, hist_test, 0, 1, cv::NORM_MINMAX, -1, cv::Mat());
 
-		double base_test = compareHist( hist_base, hist_test, method );
+		double base_test = compareHist(hist_base, hist_test, method);
 		return base_test;
 	}
 }
@@ -225,21 +231,21 @@ void GAProblem::threadedFunction()
 	}
 }
 
-void GAProblem::getBestImg( ofImage& img )
+void GAProblem::getBestImg(ofImage& img)
 {
 	mutexBest.lock();
 	img = _mImgBest;
 	mutexBest.unlock();
 }
 
-void GAProblem::getWorkImg( ofImage& img )
+void GAProblem::getWorkImg(ofImage& img)
 {
 	mutexWork.lock();
 	img = _mImgWork;
 	mutexWork.unlock();
 }
 
-void GAProblem::getLastImg( ofImage& img )
+void GAProblem::getLastImg(ofImage& img)
 {
 	mutexLast.lock();
 	img = _mImgLast;
@@ -270,12 +276,12 @@ void GAProblem::go()
 		float result = mGALib.run(mTimes);
 		float endt = ofGetElapsedTimef();
 
-		cout << ("time: " + ofToString((endt - startt)* mNGen)).c_str() << endl;;
+//		cout << ("time: " + ofToString((endt - startt)* mNGen)).c_str() << endl;;
 		if (mGALib.done()) {
 			float fit = fitnessTest(mGALib.mOut);
 			if (fit > lastFit) {
 				mWorkingPixels.clear();
-				createPixels(mWorkingPixels, mGALib.mOut, mLayers.back());
+				createPixelsFinal(mWorkingPixels, mGALib.mOut, mLastFinal);
 				pushValues(mGALib.mOut, mWorkingPixels);
 				lastFit = fit;
 			}
@@ -289,7 +295,7 @@ void GAProblem::go()
 		float fit = fitnessTest(workingValues);
 		if (fit > lastFit && !gui.isOn()) {
 			mWorkingPixels.clear();
-			createPixels(mWorkingPixels, workingValues, mLayers.back());
+			createPixelsFinal(mWorkingPixels, workingValues, mLastFinal);
 			pushValues(workingValues, mWorkingPixels);
 			lastFit = fit;
 		}
@@ -298,7 +304,7 @@ void GAProblem::go()
 	if (bFlattenAndSave) {
 		while (mLayers.size() > 1) {
 			string s = rootDir + "output/outimg" + ofToString(++mLevels, 2, 5, '0');
-			mLayers.front().saveImage(s + ".png");
+			mLayers.front().save(s + ".png");
 			mLayers.pop_front();
 			saveFloat(s + ".txt", mLayerValues.front());
 			mLayerValues.pop_front();
@@ -306,14 +312,17 @@ void GAProblem::go()
 	}
 }
 
-void GAProblem::pushValues( const vector<float>& workingValues, const ofPixelsRef workingPixels )
+// not working pixels final pixels
+void GAProblem::pushValues(const vector<float>& workingValues, const ofPixelsRef workingPixels)
 {
 	mLayerValues.push_back(workingValues);
 	mLayers.push_back(ofImage());
 	mLayers.back().setFromPixels(workingPixels);
 
+	mLastFinal = mLayers.back();
+	mLastWorking = mLayers.back();
+
 	mutexLast.lock();
 	_mImgLast.setFromPixels(workingPixels);
 	mutexLast.unlock();
 }
-

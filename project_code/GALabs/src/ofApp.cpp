@@ -46,7 +46,7 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 
-bool bRun = true;
+bool bRun = false;
 
 void ofApp::setup() {
 
@@ -61,6 +61,37 @@ void ofApp::setup() {
 	gui.setDefaultKeys(true);
 
 	ofSetWindowShape(mDna->width * 2, mDna->height * 2);
+
+// 	ofFbo::Settings sett;
+// 	sett.width = 100;
+// 	sett.height = 100;
+// 	fbo.allocate(sett);
+// 	fbo.begin();
+// 	ofClear(255,255,255, 0);
+// 	fbo.end();
+// // 	pixResult.allocate(100, 100, 4);
+// // 	workingImage.allocate(100, 100, OF_IMAGE_COLOR_ALPHA);
+// 
+// 	fbo.begin();
+// 	ofEnableAlphaBlending();
+// 	ofClear(255, 255, 255, 0);
+// 	ofSetColor(255, 0, 0, 255);
+// 	ofRect(25, 25, 25, 125);
+//  	ofEnableBlendMode(OF_BLENDMODE_SUBTRACT);
+// 	ofSetColor(0, 0, 0, 100);
+// 	ofRect(30, 30, 20, 20);
+// 	ofSetColor(0, 0, 0, 155);
+// 	ofRect(35, 35, 5, 5);
+// 	fbo.end();
+// 
+// 	ofEnableAlphaBlending();
+// 
+// 	pixResult.clear();
+// 	ofPixelsRef pixResultRef = pixResult;
+// 	fbo.readToPixels(pixResultRef);
+// 	workingImage.setFromPixels(pixResult);
+// 	static int sadf = 0;
+// 	ofSaveImage(workingImage.getPixels(), "file1.png", OF_IMAGE_QUALITY_BEST);
 }
 
 void ofApp::draw() {
@@ -90,6 +121,7 @@ void ofApp::draw() {
 		ofSetColor(255);
 		imgLast.draw(mDna->width, mDna->height);
 	}
+
 	gui.draw();
 }
 

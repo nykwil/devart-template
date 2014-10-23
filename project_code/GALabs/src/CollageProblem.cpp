@@ -15,18 +15,6 @@ bool gDebugOn = false;
 float gDebugThresh = 500;
 float gDebugImage = 0;
 
-float alpha = 0.5f;
-float beta = 1.7320508075688772935f * alpha;
-
-ofVec2f hexCoords[] = {
-	ofVec2f(-beta, -alpha),
-	ofVec2f(0, -2 * alpha),
-	ofVec2f(beta, -alpha),
-	ofVec2f(beta, alpha),
-	ofVec2f(0, 2 * alpha),
-	ofVec2f(-beta, alpha),
-};
-
 CollageProblem::CollageProblem() : GAProblem()
 {
 	mCompMethod = 7;
@@ -75,6 +63,8 @@ void CollageProblem::setup()
 }
 
 void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
+	ofTessellator tess;
+	ofxCvContourFinder contourFinder;
 
 	contourFinder.findContours(cvImg, gMinSize, cvImg.getWidth() * cvImg.getHeight() * 0.8f, gConsider, false, true);
 
@@ -104,16 +94,60 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 			}
 			info->mesh.disableColors();
 			info->mesh.disableNormals();
-			blobs.push_back(info);
+//			blobs.push_back(info);
+
+			ofFbo fbo;
+			ofPixels pixResult;
+			ofImage workingImage;
+			ofFbo::Settings sett;
+			sett.width = rect.width;
+			sett.height = rect.height;
+			fbo.allocate(sett);
+
+			fbo.begin();
+			ofClear(255,255,255, 0);
+			ofEnableAlphaBlending();
+			ofSetColor(255, 255, 255);
+			image.bind();
+			ofPushMatrix();
+			ofTranslate(-rect.x, -rect.y);
+			info->mesh.draw();
+			ofPopMatrix();
+			image.unbind();
+			fbo.end();
+
+			pixResult.clear();
+			fbo.readToPixels(pixResult);
+			workingImage.setFromPixels(pixResult);
+
+			if (rect.getLeft() < 2 || 
+				image.width - rect.getRight() < 2 ||
+				rect.getTop() < 2 ||
+				image.height - rect.getBottom() < 2)
+			{
+				static int index = 0;
+				ofSaveImage(workingImage.getPixels(), "test/" + name + "_bad" + ofToString(index++) + " .png", OF_IMAGE_QUALITY_BEST);
+			}
+			else 
+			{
+				static int index = 0;
+				ofSaveImage(workingImage.getPixels(), "test/" + name + "_good" + ofToString(index++) + " .png", OF_IMAGE_QUALITY_BEST);
+				textures.push_back(workingImage);
+			}
 		}
 	}
+
+	//@TODO sort
 }
 
-void ImageCache::createBlobs(float threshold) {
+void ImageCache::createBlobs(ofxCvColorImage& cvImgColor, float threshold) {
 	for (int i = 0; i < blobs.size(); ++i) {
 		delete blobs[i];
 	}
 	blobs.clear();
+
+	ofxCvGrayscaleImage cvImgGrayscale;
+	cvImgGrayscale.allocate(cvImgColor.width, cvImgColor.height);
 
 	cvImgGrayscale.setFromColorImage(cvImgColor);
 	cvImgGrayscale.threshold(threshold, false);
@@ -123,12 +157,11 @@ void ImageCache::createBlobs(float threshold) {
 	cvImgGrayscale.invert();
 	cvImgGrayscale.threshold(threshold, false);
 	createBlobCvGray(cvImgGrayscale);
-
-	this->threshold = threshold;
 }
 
 void ImageCache::loadImage(const string& filename, float maxWidth)
 {
+	name = filename;
 	image.loadImage(filename);
 
 	if (image.getWidth() > maxWidth) {
@@ -136,11 +169,12 @@ void ImageCache::loadImage(const string& filename, float maxWidth)
 		image.resize(maxWidth, maxWidth / diff);
 	}
 
+	ofxCvColorImage cvImgColor;
+	cvImgColor.allocate(image.getWidth(), image.getHeight());
 	cvImgColor.setFromPixels(image.getPixelsRef());
-	this->threshold = -1000; // so that it recalcs
-
-	if (cvImgGrayscale.getWidth() == cvImgColor.getWidth() || cvImgGrayscale.getHeight() != cvImgColor.getHeight())
-		cvImgGrayscale.allocate(cvImgColor.getWidth(), cvImgColor.getHeight());
+	for (float f = 0; f < 10.f; f += 1.0f) {
+		createBlobs(cvImgColor, ofMap(f, 0, 10, gMinThresh, gMaxThresh));
+	}
 }
 
 enum RangeType {
@@ -179,26 +213,27 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 	// start draw
 	ofFill();
 
-	if (gDebugOn) {
-		ImageCache& image = mImages[gDebugImage * mImages.size()];
-		float thresh = ofMap(gDebugThresh, 0, 1, gMinThresh, gMaxThresh);
-		if (gThreshThresh < fabs(image.getThreshold() - thresh)) {
-			image.createBlobs(thresh);
-		}
-		ofPushMatrix();
-		float scale = width / image.image.getWidth();
-		ofScale(scale, scale, scale);
-		image.cvImgGrayscale.draw(0,0);
-		for (int ib = 0; ib < image.blobs.size(); ++ib) {
-			ofSetColor(255);
-			image.blobs[ib]->line.draw();
-			image.image.bind();
-			image.blobs[ib]->mesh.draw(OF_MESH_FILL);
-			image.image.unbind();
-		}
-		ofPopMatrix();
-	}
-	else {
+// 	if (gDebugOn) {
+// 		ImageCache& image = mImages[gDebugImage * mImages.size()];
+// 		float thresh = ofMap(gDebugThresh, 0, 1, gMinThresh, gMaxThresh);
+// 		if (gThreshThresh < fabs(image.getThreshold() - thresh)) {
+// 			image.createBlobs(thresh);
+// 		}
+// 		ofPushMatrix();
+// 		float scale = width / image.image.getWidth();
+// 		ofScale(scale, scale, scale);
+// 		image.cvImgGrayscale.draw(0,0);
+// 		for (int ib = 0; ib < image.blobs.size(); ++ib) {
+// 			ofSetColor(255);
+// 			image.blobs[ib]->line.draw();
+// 			image.image.bind();
+// 			image.blobs[ib]->mesh.draw(OF_MESH_FILL);
+// 			image.image.unbind();
+// 		}
+// 		ofPopMatrix();
+// 	}
+//	else {
+	{
 		ofSetColor(255);
 		baseImage.draw(0, 0);
 		for (int ir = 0; ir < mRepeat; ++ir) {
@@ -212,21 +247,15 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 
 			ImageCache& image = mImages[iimg];
 
-			if (gThreshThresh < fabs(image.getThreshold() - thresh)) {
-				image.createBlobs(thresh);
-			}
-			if (image.blobs.size() > 0 ) {
-				int ib = values[RT_BLOB] * image.blobs.size();
+			if (image.textures.size() > 0 ) {
+				int ib = values[RT_BLOB] * image.textures.size();
+				ofImage& img = image.textures[ib];
 				scale = scale * width / image.image.getWidth();
 				ofPushMatrix();
 				ofTranslate(x, y);
 				ofRotateZ(deg);
 				ofScale(scale, scale, scale);
-				ofTranslate(-image.blobs[ib]->centroid.x, -image.blobs[ib]->centroid.y);
-				ofSetColor(255, 255, 255);
-				image.image.bind();
-				image.blobs[ib]->mesh.draw(OF_MESH_FILL);
-				image.image.unbind();
+				img.draw(-img.width / 2, -img.height / 2);
 				ofPopMatrix();
 			}
 		}
@@ -235,4 +264,9 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 	// end draw
 	mFbo.end();
 	mFbo.readToPixels(pixResult);
+}
+
+void CollageProblem::createPixelsFinal(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage)
+{
+	createPixels(pixels, values, baseImage);
 }

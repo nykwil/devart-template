@@ -32,7 +32,10 @@ public:
 	void pickBest(ofImage& mImg1, ofImage& mImg2);
 	float fitnessTest(const vector<float>& values);
     virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage) = 0;
-    void fillRandom(vector<float>& values);
+	virtual void createPixelsFinal(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage) {
+		createPixels(pixels, values, baseImage);
+	}
+	void fillRandom(vector<float>& values);
 
 	float compareImg(ofImage& img1, ofImage& img2, int method);
 	virtual void setup();
@@ -123,23 +126,15 @@ public:
 class ImageCache {
 public:
 	ofImage image;
-	ofxCvColorImage cvImgColor;
-	ofxCvGrayscaleImage cvImgGrayscale;
-	vector<BlobInfo*> blobs;
-	ofxCvContourFinder contourFinder;
-	ofTessellator tess;
+	vector<ofImage> textures;
+	string name;
 
 	void loadImage(const string& filename, float maxWidth);
 
-	void createBlobCvGray(ofxCvGrayscaleImage& cvImg);
-	void createBlobImage(ImageCache& img);
-	void createBlobs(float threshold);
-	float getThreshold() {
-		return threshold;
-	}
-
 private:
-	float threshold;
+	vector<BlobInfo*> blobs;
+	void createBlobCvGray(ofxCvGrayscaleImage& cvImg);
+	void createBlobs(ofxCvColorImage& cvImgColor, float threshold);
 };
 
 class CollageProblem : public GAProblem
@@ -149,6 +144,7 @@ public:
 	virtual void setup();
 	virtual void setRanges();
 	virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage);
+	virtual void createPixelsFinal(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage) {}
 	
 	ofFbo mFbo;
 	vector<ImageCache> mImages;
