@@ -30,6 +30,12 @@ GAProblem::GAProblem()
 	gui.addToggle("FlattenAndSave", bFlattenAndSave);
 }
 
+int ITERS_PER_UPDATE = 10;
+
+ofImage mLastWorking;
+ofImage mLastFinal;
+ofImage workingImage;
+
 void GAProblem::setup()
 {
 	gui.loadFromXML();
@@ -80,12 +86,6 @@ void GAProblem::setup()
 
 	setRanges();
 }
-
-int ITERS_PER_UPDATE = 10;
-
-ofImage mLastWorking;
-ofImage mLastFinal;
-ofImage workingImage;
 
 float GAProblem::fitnessTest(const vector<float>& values)
 {
@@ -316,11 +316,12 @@ void GAProblem::go()
 void GAProblem::pushValues(const vector<float>& workingValues, const ofPixelsRef workingPixels)
 {
 	mLayerValues.push_back(workingValues);
-	mLayers.push_back(ofImage());
-	mLayers.back().setFromPixels(workingPixels);
 
-	mLastFinal = mLayers.back();
-	mLastWorking = mLayers.back();
+	mLastFinal.setFromPixels(workingPixels);
+	mLastWorking = mLastFinal;
+// @TODO	mLastWorking.resize(mCompareWidth, mCompareHeight); // @TODO
+
+	mLayers.push_back(mLastFinal);
 
 	mutexLast.lock();
 	_mImgLast.setFromPixels(workingPixels);

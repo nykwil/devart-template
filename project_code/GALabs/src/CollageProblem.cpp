@@ -126,12 +126,12 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 				image.height - rect.getBottom() < 2)
 			{
 				static int index = 0;
-				ofSaveImage(workingImage.getPixels(), "test/" + name + "_bad" + ofToString(index++) + " .png", OF_IMAGE_QUALITY_BEST);
+				//ofSaveImage(workingImage.getPixels(), "test/bad_" + name + ofToString(index++) + " .png", OF_IMAGE_QUALITY_BEST);
 			}
 			else 
 			{
 				static int index = 0;
-				ofSaveImage(workingImage.getPixels(), "test/" + name + "_good" + ofToString(index++) + " .png", OF_IMAGE_QUALITY_BEST);
+				ofSaveImage(workingImage.getPixels(), "test/good_" + name + ofToString(index++) + " .png", OF_IMAGE_QUALITY_BEST);
 				textures.push_back(workingImage);
 			}
 		}
@@ -161,7 +161,7 @@ void ImageCache::createBlobs(ofxCvColorImage& cvImgColor, float threshold) {
 
 void ImageCache::loadImage(const string& filename, float maxWidth)
 {
-	name = filename;
+	name = ofFilePath::getBaseName(filename);
 	image.loadImage(filename);
 
 	if (image.getWidth() > maxWidth) {
