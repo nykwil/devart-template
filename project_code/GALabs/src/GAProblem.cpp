@@ -3,9 +3,12 @@
 #include "ColorConvert.h"
 #include "ofxSimpleGuiToo.h"
 #include "ColorLook.h"
+#include <ppl.h>
+#include "ofxCvColorImageAlpha.h"
 
-GAProblem::GAProblem()
-{
+int ITERS_PER_UPDATE = 10;
+
+GAProblem::GAProblem() {
 	rootDir = ofToDataPath("");
 
 	mCompMethod = 5;
@@ -18,7 +21,7 @@ GAProblem::GAProblem()
 	mCompareWidth = 200;
 	mCompareHeight = 200;
 	mRepeat = 1;
-	width = 600;
+	mWorkingWidth = 600;
 	mLevels = 0;
 
 	gui.addSlider("CompMethod", mCompMethod, 0, 9);
@@ -30,14 +33,7 @@ GAProblem::GAProblem()
 	gui.addToggle("FlattenAndSave", bFlattenAndSave);
 }
 
-int ITERS_PER_UPDATE = 10;
-
-ofImage mLastWorking;
-ofImage mLastFinal;
-ofImage workingImage;
-
-void GAProblem::setup()
-{
+void GAProblem::setup() {
 	gui.loadFromXML();
 
 	{
@@ -47,8 +43,11 @@ void GAProblem::setup()
 		mImgOrig.loadImage(dir.getPath(rand() % nd));
 	}
 
-	height = width / (mImgOrig.getWidth() / mImgOrig.getHeight());
-	mImgOrig.resize(width, height);
+	mWorkingHeight = mWorkingWidth / (mImgOrig.getWidth() / mImgOrig.getHeight());
+	mImgOrig.resize(mWorkingWidth, mWorkingHeight);
+
+	mFinalWidth = mWorkingWidth * 4;
+	mFinalHeight = mWorkingHeight * 4;
 
 	mImgCompare = mImgOrig;
 	mImgCompare.resize(mCompareWidth, mCompareHeight);
@@ -74,52 +73,35 @@ void GAProblem::setup()
 			}
 		}
 	}
-	mLayers.push_back(img);
 
-	mLayers.back().resize(width, height);
-	mLayerValues.push_back(vector<float>());
+	mLastWorking = img;
+	mLastWorking.resize(mWorkingWidth, mWorkingHeight); // @TODO
 
-	mLastFinal = mLayers.back();
-	mLastWorking = mLayers.back();
+	mLastFinal = img;
+	mLastFinal.resize(mFinalWidth, mFinalHeight); // @TODO
+
+	mFinalLayers.push_back(mLastFinal);
+	mFinalValues.push_back(vector<float>());
 
 	mGALib.setFitness(this, &GAProblem::fitnessTest);
 
 	setRanges();
 }
 
-float GAProblem::fitnessTest(const vector<float>& values)
-{
-	mWorkingPixels.clear();
-	createPixels(mWorkingPixels, values, mLastWorking);
+float GAProblem::fitnessTest(const vector<float>& values) {
+	createPixels(mWorkingPixels, values, mLastWorking, mWorkingWidth, mWorkingHeight);
 
-	workingImage.setFromPixels(mWorkingPixels);
-	workingImage.resize(mCompareWidth, mCompareHeight);
+	ofImage compImage;
 
-	assert(mImgCompare.getWidth() == workingImage.getWidth() && mImgCompare.getHeight() == workingImage.getHeight());
+	compImage.setFromPixels(mWorkingPixels);
+	compImage.resize(mCompareWidth, mCompareHeight);
 
-	float fitness = compareImg(mImgCompare, workingImage, mCompMethod);
+	assert(mImgCompare.getWidth() == compImage.getWidth() && mImgCompare.getHeight() == compImage.getHeight());
 
-	static int iter = 0;
-	if (iter % ITERS_PER_UPDATE == 0 && mutexWork.tryLock())
-	{
-		_mImgWork.setFromPixels(mWorkingPixels);
-		mutexWork.unlock();
-	}
-	++iter;
-
-	if (fitness > mBestValue)
-	{
-		mutexBest.lock();
-		_mImgBest.setFromPixels(mWorkingPixels);
-		mutexBest.unlock();
-
-		mBestValue = fitness;
-	}
-	return fitness;
+	return compareImg(compImage, mCompMethod);
 }
 
-void GAProblem::fillRandom(vector<float>& values)
-{
+void GAProblem::fillRandom(vector<float>& values) {
 	values.resize(mRanges.size() * mRepeat);
 	for (int i = 0; i < values.size(); ++i) {
 		values[i] = ofRandom(mRanges[i % mRanges.size()].mMin, mRanges[i % mRanges.size()].mMax);
@@ -131,31 +113,37 @@ float GetBright(ofColor col) {
 	return (0.2126f * col.r) + (0.7152f * col.g) + (0.0722f * col.b);
 }
 
-float GAProblem::compareImg(ofImage& img1, ofImage& img2, int method)
-{
-	assert(img1.getWidth() == img2.getWidth() && img1.getHeight() == img2.getHeight());
+float GAProblem::compareImg(ofImage& imgNew, int method) {
+	assert(mImgCompare.getWidth() == imgNew.getWidth() && mImgCompare.getHeight() == imgNew.getHeight());
 
 	if (method >= 4) {
-		float diff = 0;
-		if (method == 7) {
-			for (int w = 0; w < img1.getWidth(); ++w) {
-				for (int h = 0; h < img1.getHeight(); ++h) {
-					diff +=  255 - abs(GetBright(img1.getColor(w, h)) - GetBright(img2.getColor(w, h)));
+		if (method == 8) {
+			return cannyComp(imgNew);
+		}
+		else if (method == 7) {
+			float diff = 0;
+			for (int w = 0; w < imgNew.getWidth(); ++w) {
+				for (int h = 0; h < imgNew.getHeight(); ++h) {
+					diff +=  255 - abs(GetBright(mImgCompare.getColor(w, h)) - GetBright(imgNew.getColor(w, h)));
 				}
 			}
+			return diff;
 		}
 		if (method == 6) {
-			for (int w = 0; w < img1.getWidth(); ++w) {
-				for (int h = 0; h < img1.getHeight(); ++h) {
-					diff += ColorLook::instance().getDelta(img1.getColor(w, h), img2.getColor(w, h));
+			float diff = 0;
+			for (int w = 0; w < mImgCompare.getWidth(); ++w) {
+				for (int h = 0; h < mImgCompare.getHeight(); ++h) {
+					diff += ColorLook::instance().getDelta(mImgCompare.getColor(w, h), imgNew.getColor(w, h));
 				}
 			}
+			return diff;
 		}
 		else if (method == 5) {
-			for (int w = 0; w < img1.getWidth(); ++w) {
-				for (int h = 0; h < img1.getHeight(); ++h) {
-					ofFloatColor c1 = img1.getColor(w, h);
-					ofFloatColor c2 = img2.getColor(w, h);
+			float diff = 0;
+			for (int w = 0; w < mImgCompare.getWidth(); ++w) {
+				for (int h = 0; h < mImgCompare.getHeight(); ++h) {
+					ofFloatColor c1 = mImgCompare.getColor(w, h);
+					ofFloatColor c2 = imgNew.getColor(w, h);
 
 					float delta = ColorCompare::deltaE1976(
 						ColorRGB(c1.r, c1.g, c1.b, false).toLinearRGB().toXYZ().toLab(),
@@ -164,22 +152,23 @@ float GAProblem::compareImg(ofImage& img1, ofImage& img2, int method)
 					diff += ColorCompare::getMaxDelta() - delta;
 				}
 			}
+			return diff;
 		}
-		else if (method == 4) {
-			for (int w = 0; w < img1.getWidth(); ++w) {
-				for (int h = 0; h < img1.getHeight(); ++h) {
-					diff += ColorCompare::HsbDiff(img1.getColor(w, h), img2.getColor(w, h));
+		else {
+			float diff = 0;
+			for (int w = 0; w < mImgCompare.getWidth(); ++w) {
+				for (int h = 0; h < mImgCompare.getHeight(); ++h) {
+					diff += ColorCompare::HsbDiff(mImgCompare.getColor(w, h), imgNew.getColor(w, h));
 				}
 			}
+			return diff;
 		}
-
-		return diff;
 	}
 	else {
 		static ofxCvColorImage cvi1;
 		static ofxCvColorImage cvi2;
-		cvi1.setFromPixels(img1.getPixels(), img1.getWidth(), img1.getHeight());
-		cvi2.setFromPixels(img2.getPixels(), img2.getWidth(), img2.getHeight());
+		cvi1.setFromPixels(mImgCompare.getPixels(), mImgCompare.getWidth(), mImgCompare.getHeight());
+		cvi2.setFromPixels(imgNew.getPixels(), imgNew.getWidth(), imgNew.getHeight());
 
 		cv::Mat src_base, hsv_base;
 		cv::Mat src_test, hsv_test;
@@ -224,36 +213,31 @@ float GAProblem::compareImg(ofImage& img1, ofImage& img2, int method)
 	}
 }
 
-void GAProblem::threadedFunction()
-{
+void GAProblem::threadedFunction() {
 	while (isThreadRunning()) {
 		go();
 	}
 }
 
-void GAProblem::getBestImg(ofImage& img)
-{
-	mutexBest.lock();
-	img = _mImgBest;
-	mutexBest.unlock();
+void GAProblem::getCompImg(ofImage& img) {
+	mutexComp.lock();
+	img = _mImgComp;
+	mutexComp.unlock();
 }
 
-void GAProblem::getWorkImg(ofImage& img)
-{
+void GAProblem::getWorkImg(ofImage& img) {
 	mutexWork.lock();
 	img = _mImgWork;
 	mutexWork.unlock();
 }
 
-void GAProblem::getLastImg(ofImage& img)
-{
-	mutexLast.lock();
-	img = _mImgLast;
-	mutexLast.unlock();
+void GAProblem::getFinalImg(ofImage& img) {
+	mutexFinal.lock();
+	img = _mImgFinal;
+	mutexFinal.unlock();
 }
 
-void saveFloat(const string& filename, vector<float> values)
-{
+void saveFloat(const string& filename, vector<float> values) {
 	ofFile file(filename, ofFile::Mode::WriteOnly);
 	for (int i = 0; i < values.size(); ++i) {
 		string s = ofToString(values[i]);
@@ -264,9 +248,8 @@ void saveFloat(const string& filename, vector<float> values)
 	}
 }
 
-void GAProblem::go()
-{
-	static float lastFit = 0;
+void GAProblem::go() {
+	static float mLastFit = 0;
 
 	if (mUseDna && !gui.isOn()) {
 		if (!mGALib.started) {
@@ -279,51 +262,114 @@ void GAProblem::go()
 //		cout << ("time: " + ofToString((endt - startt)* mNGen)).c_str() << endl;;
 		if (mGALib.done()) {
 			float fit = fitnessTest(mGALib.mOut);
-			if (fit > lastFit) {
-				mWorkingPixels.clear();
-				createPixelsFinal(mWorkingPixels, mGALib.mOut, mLastFinal);
-				pushValues(mGALib.mOut, mWorkingPixels);
-				lastFit = fit;
+			updateWorkImage();
+			if (fit > mLastFit) {
+				createPixels(mFinalPixels, mGALib.mOut, mLastFinal, mFinalWidth, mFinalHeight);
+				pushValuesFinal(mGALib.mOut, mFinalPixels);
+				mLastFit = fit;
 			}
 			mGALib.started = false;
 		}
 	}
 	else {
-		static vector<float> workingValues;
+		vector<float> values;
 
-		fillRandom(workingValues);
-		float fit = fitnessTest(workingValues);
-		if (fit > lastFit && !gui.isOn()) {
-			mWorkingPixels.clear();
-			createPixelsFinal(mWorkingPixels, workingValues, mLastFinal);
-			pushValues(workingValues, mWorkingPixels);
-			lastFit = fit;
+		fillRandom(values);
+		float fit = fitnessTest(values);
+
+		createPixels(mFinalPixels, values, mLastFinal, mFinalWidth, mFinalHeight);
+		createPixels(mWorkingPixels, values, mLastWorking, mWorkingWidth, mWorkingHeight);
+		if (fit > mLastFit && !gui.isOn()) {
+			pushValuesFinal(values, mFinalPixels);
+			mLastFit = fit;
 		}
+
+		mutexWork.lock();
+		_mImgWork.setFromPixels(mWorkingPixels);
+		mutexWork.unlock();
 	}
 
 	if (bFlattenAndSave) {
-		while (mLayers.size() > 1) {
+		while (mFinalLayers.size() > 1) {
 			string s = rootDir + "output/outimg" + ofToString(++mLevels, 2, 5, '0');
-			mLayers.front().save(s + ".png");
-			mLayers.pop_front();
-			saveFloat(s + ".txt", mLayerValues.front());
-			mLayerValues.pop_front();
+			ofSaveImage(mFinalLayers.front(), s + ".png", OF_IMAGE_QUALITY_BEST);
+			mFinalLayers.pop_front();
+
+			saveFloat(s + ".txt", mFinalValues.front());
+			mFinalValues.pop_front();
 		}
 	}
 }
 
 // not working pixels final pixels
-void GAProblem::pushValues(const vector<float>& workingValues, const ofPixelsRef workingPixels)
-{
-	mLayerValues.push_back(workingValues);
+void GAProblem::pushValuesFinal(const vector<float>& values, const ofPixelsRef pixels) {
+	mFinalValues.push_back(values);
 
-	mLastFinal.setFromPixels(workingPixels);
+	mLastFinal.setFromPixels(pixels);
+	mFinalLayers.push_back(pixels);
+
 	mLastWorking = mLastFinal;
-// @TODO	mLastWorking.resize(mCompareWidth, mCompareHeight); // @TODO
+	mLastWorking.resize(mWorkingWidth, mWorkingHeight); // @TODO
 
-	mLayers.push_back(mLastFinal);
-
-	mutexLast.lock();
-	_mImgLast.setFromPixels(workingPixels);
-	mutexLast.unlock();
+	mutexFinal.lock();
+	_mImgFinal.setFromPixels(pixels);
+	mutexFinal.unlock();
 }
+
+void GAProblem::updateWorkImage()
+{
+	static int iter = 0;
+	if (iter % ITERS_PER_UPDATE == 0 && mutexWork.tryLock())
+	{
+		_mImgWork.setFromPixels(mWorkingPixels);
+		mutexWork.unlock();
+	}
+	++iter;
+}
+
+ofxCvGrayscaleImage cvCannyImgComp;
+
+using namespace concurrency;
+
+float GAProblem::cannyComp(ofImage& imgNew)
+{
+	if (cvCannyImgComp.getWidth() == 0) {
+		createCanny(mImgCompare, cvCannyImgComp);
+	}
+
+	ofxCvGrayscaleImage canny;  
+	createCanny(imgNew, canny);
+	updateCompImage(canny);
+
+	auto newpix = canny.getPixels();
+	auto oldpix = cvCannyImgComp.getPixels();
+
+	combinable<float> sum;
+
+	parallel_for(int(0), (int)(canny.getWidth() * canny.getHeight()), [&](int i)
+	{
+		sum.local() += 255 - abs(oldpix[i] - newpix[i]);
+	});
+	return sum.combine(plus<float>());
+
+// 	int i = 0;
+// 	float diff = 0;
+// 	for(int y = 0; y < canny.getHeight(); y += 1) {
+// 		for(int x = 0; x < canny.getWidth(); x += 1, ++i) {
+// 			diff += 255 - abs(oldpix[i] - newpix[i]);
+// 		}
+// 	}
+// 	return diff;
+}
+
+void GAProblem::createCanny(ofImage &imgNew, ofxCvGrayscaleImage &canny)
+{
+	ofxCvGrayscaleImage cvImgGray;
+	imgNew.setImageType(OF_IMAGE_GRAYSCALE);
+	cvImgGray.allocate(imgNew.getWidth(), imgNew.getHeight());
+	cvImgGray.setFromPixels(imgNew.getPixelsRef());
+
+	canny.allocate(cvImgGray.getWidth(), cvImgGray.getHeight());  
+	cvCanny(cvImgGray.getCvImage(), canny.getCvImage(), 50.0, 120.0);
+}
+

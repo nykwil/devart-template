@@ -214,6 +214,19 @@
     <ClCompile Include="src\StripProblem.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\addons\ofxFatLines\src\ofxFatLine.cpp">
+      <Filter>addons\NewFilter1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\addons\ofxFatLines\src\sincosineLut.cpp">
+      <Filter>addons\NewFilter1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxMesh2TriMesh.cpp">
+      <Filter>addons\NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxPolyline2Mesh.cpp">
+      <Filter>addons\NewFilter2</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ofxCvColorImageAlpha.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -317,6 +330,12 @@
     </Filter>
     <Filter Include="addons\ofxSimpleGuiToo\src\Controls">
       <UniqueIdentifier>{c4eafeee-91c8-4bdd-9889-a7c8f7088fa3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="addons\NewFilter1">
+      <UniqueIdentifier>{4b0dc03b-d9d8-4854-84b0-7e1364301da3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="addons\NewFilter2">
+      <UniqueIdentifier>{928aa764-3c28-408a-9695-16c5a23b5063}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -806,6 +825,19 @@
     <ClInclude Include="..\..\..\addons\ofxSimpleGuiToo\src\ofxSimpleGuiValueControl.h">
       <Filter>addons\ofxSimpleGuiToo\src</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\addons\ofxFatLines\src\ofxFatLine.h">
+      <Filter>addons\NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\addons\ofxFatLines\src\sincosineLut.h">
+      <Filter>addons\NewFilter1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxMesh2TriMesh.h">
+      <Filter>addons\NewFilter2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxPolyline2Mesh.h">
+      <Filter>addons\NewFilter2</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ofxCvColorImageAlpha.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />

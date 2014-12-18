@@ -12,52 +12,77 @@ public:
 	string rootDir;
 	void pickBest(ofImage& mImg1, ofImage& mImg2);
 	float fitnessTest(const vector<float>& values);
-    virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage) = 0;
-	virtual void createPixelsFinal(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage) {
-		createPixels(pixels, values, baseImage);
+
+	void updateWorkImage();
+	template<typename T>
+	void updateCompImage(T& imgCmp)
+	{
+		static int iter = 0;
+		if (iter % ITERS_PER_UPDATE == 0 && mutexComp.tryLock())
+		{
+			_mImgComp.setFromPixels(imgCmp.getPixels());
+			mutexComp.unlock();
+		}
+		++iter;
 	}
+
+	virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height) = 0;
 	void fillRandom(vector<float>& values);
 
-	float compareImg(ofImage& img1, ofImage& img2, int method);
+	float compareImg(ofImage& imgNew, int method);
+
+	float cannyComp(ofImage& imgNew);
+
+	void createCanny(ofImage &imgNew, ofxCvGrayscaleImage &canny);
+
 	virtual void setup();
 
 	virtual void setRanges() = 0;
 	virtual void threadedFunction();
 	void go();
-	void pushValues( const vector<float>& workingValues, const ofPixelsRef workingPixels );
+	void pushValuesFinal(const vector<float>& workingValues, const ofPixelsRef workingPixels);
+	virtual void debugDraw() {}
 
-    list<ofImage> mLayers;
-    list< vector<float> > mLayerValues;
-    ofPixels mWorkingPixels;
+    list<ofPixels> mFinalLayers;
+    list< vector<float> > mFinalValues;
+	ofPixels mWorkingPixels;
+	ofPixels mFinalPixels;
+
     ofImage mImgCompare;
     ofImage mImgOrig;
 
+	ofImage mLastWorking;
+	ofImage mLastFinal;
+
     ofxGALib mGALib;
-	float mBestValue;
 	int mPopSize;
 	int mNGen;
 
-	float width;
-	float height;
 	int mLevels;
 
-	void getBestImg( ofImage& img );
-    void getWorkImg( ofImage& img );
-    void getLastImg( ofImage& img );
+	void getCompImg(ofImage& img);
+    void getWorkImg(ofImage& img);
+    void getFinalImg(ofImage& img);
 
     ofMutex mutexWork;
-    ofMutex mutexBest;
-    ofMutex mutexLast;
+    ofMutex mutexComp;
+    ofMutex mutexFinal;
 
     ofImage _mImgWork;
-    ofImage _mImgBest;
-    ofImage _mImgLast;
+    ofImage _mImgComp;
+    ofImage _mImgFinal;
 
     int mCompMethod;
     bool mUseDna;
     bool bFlattenAndSave;
     int mCompareWidth;
     int mCompareHeight;
+	float mWorkingWidth;
+	float mWorkingHeight;
+	int mFinalWidth;
+	int mFinalHeight;
+
+
     int mRepeat;
 	int mTimes;
 
@@ -69,16 +94,15 @@ class FboProblem : public GAProblem
 public:
     virtual void setup();
     virtual void setRanges();
-    virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage);
+    virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height);
     void drawValues(const vector<float>& values);
-    ofFbo mFbo;
 };
 
 class BrushProblem : public GAProblem
 {
 public:
     virtual void setRanges();
-    virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage);
+    virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height);
 	Drawer mDraw;
 	ofImage mBrush[2];
 };
@@ -92,13 +116,14 @@ public:
     static float gRotation;
 	virtual void setup();
     virtual void setRanges();
-    virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage);
+    virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height);
 	Drawer mDraw;
 	ofImage mBrush[2];
 };
 
 class BlobInfo {
 public:
+	ofImage texture;
 	ofPolyline line;
 	ofMesh mesh;
 	ofPoint centroid;
@@ -107,15 +132,15 @@ public:
 class ImageCache {
 public:
 	ofImage image;
-	vector<ofImage> textures;
 	string name;
+	vector<BlobInfo*> blobs;
 
 	void loadImage(const string& filename, float maxWidth);
+	void deleteBlobs();
+	void addBlobs(float threshold);
 
 private:
-	vector<BlobInfo*> blobs;
 	void createBlobCvGray(ofxCvGrayscaleImage& cvImg);
-	void createBlobs(ofxCvColorImage& cvImgColor, float threshold);
 };
 
 class CollageProblem : public GAProblem
@@ -124,10 +149,9 @@ public:
 	CollageProblem();
 	virtual void setup();
 	virtual void setRanges();
-	virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage);
-	virtual void createPixelsFinal(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage);
+	virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height);
+	virtual void debugDraw();
 	
-	ofFbo mFbo;
 	vector<ImageCache> mImages;
 };
 
@@ -136,7 +160,5 @@ class StripProblem : public GAProblem
 public:
 	virtual void setup();
 	virtual void setRanges();
-	virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage);
-
-	ofFbo mFbo;
+	virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height);
 };

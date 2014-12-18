@@ -4,18 +4,7 @@
 #include "ofxSimpleGuiToo.h"
 #include "ColorLook.h"
 
-void StripProblem::setup()
-{
-    GAProblem::setup();
-
-    mFbo.allocate(width, height);
-    mFbo.begin();
-    ofClear(255,255,255, 0);
-    mFbo.end();
-}
-
-void StripProblem::setRanges()
-{
+void StripProblem::setRanges() {
     mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // r
     mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // g
     mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // b
@@ -26,13 +15,17 @@ void StripProblem::setRanges()
     mRanges.push_back(RangeInfo(4, 0, 360)); // ang
 }
 
+void StripProblem::createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height) {
+	assert(values.size() == mRanges.size() * mRepeat);
 
-void StripProblem::createPixels( ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage )
-{
-    assert (values.size() == mRanges.size() * mRepeat);
-    assert(mFbo.isAllocated());
-    mFbo.begin();
-    ofSetColor(255);
+	pixels.clear();
+
+	ofFbo mFbo;
+	mFbo.allocate(width, height);
+	mFbo.begin();
+	ofClear(255,255,255, 0);
+
+	ofSetColor(255);
 	ofFill();
 	baseImage.draw(0,0);
 
@@ -44,8 +37,8 @@ void StripProblem::createPixels( ofPixelsRef pixels, const vector<float>& values
 		float b = values[i++];
 		float a = values[i++];
 
-		float x = values[i++] * width;
-		float y = values[i++] * height;
+		float x = values[i++] * mWorkingWidth;
+		float y = values[i++] * mWorkingHeight;
 
 		float w = values[i++];
 		float ang = values[i++];
@@ -54,7 +47,7 @@ void StripProblem::createPixels( ofPixelsRef pixels, const vector<float>& values
 		ofSetColor(col);
 		ofTranslate(x, y);
 		ofRotateZ(ang);
-		ofRect(-w / 2, height, w, height * 2.f);
+		ofRect(-w / 2, mWorkingHeight, w, mWorkingHeight * 2.f);
 		ofPopMatrix();
 		//        ofCircle(x,y,z);
 		// ofBox(x,y,z,w);

@@ -4,16 +4,6 @@
 #include "ofxSimpleGuiToo.h"
 #include "ColorLook.h"
 
-void FboProblem::setup()
-{
-    GAProblem::setup();
-
-    mFbo.allocate(width, height);
-    mFbo.begin();
-    ofClear(255,255,255, 0);
-    mFbo.end();
-}
-
 void FboProblem::setRanges()
 {
     mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // r
@@ -25,7 +15,7 @@ void FboProblem::setRanges()
     mRanges.push_back(RangeInfo(4, 20, 50)); // h
 }
 
-void FboProblem::drawValues( const vector<float>& values )
+void FboProblem::drawValues(const vector<float>& values)
 {
     ofFill();
     int i = 0;
@@ -43,17 +33,22 @@ void FboProblem::drawValues( const vector<float>& values )
 
         ofFloatColor col(r,g,b);
         ofSetColor(col);
-        ofRect(x * width, y * width, w, h);
+        ofRect(x * mWorkingWidth, y * mWorkingHeight, w, h);
         //        ofCircle(x,y,z);
         // ofBox(x,y,z,w);
     }
 }
 
-void FboProblem::createPixels( ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage )
+void FboProblem::createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height)
 {
-    assert (values.size() == mRanges.size() * mRepeat);
-    assert(mFbo.isAllocated());
-    mFbo.begin();
+    assert(values.size() == mRanges.size() * mRepeat);
+	pixels.clear();
+
+	ofFbo mFbo;
+	mFbo.allocate(width, height);
+	mFbo.begin();
+	ofClear(255,255,255, 0);
+	
     ofFill();
     ofSetColor(255);
     baseImage.draw(0,0);
@@ -76,9 +71,10 @@ void BrushProblem::setRanges()
     mRanges.push_back(RangeInfo(4, 0, TWO_PI)); // ang
 }
 
-void BrushProblem::createPixels(ofPixelsRef pixResult, const vector<float>& values, ofImage& imgBase)
+void BrushProblem::createPixels(ofPixelsRef pixResult, const vector<float>& values, ofImage& imgBase, int width, int height)
 {
     assert (values.size() == mRanges.size() * mRepeat);
+	pixResult.clear();
     pixResult.setFromPixels(imgBase.getPixels(), imgBase.getWidth(), imgBase.getHeight(), imgBase.getPixelsRef().getNumChannels());
     int i = 0;
     for (int is = 0; is < mRepeat; ++is)
@@ -86,8 +82,8 @@ void BrushProblem::createPixels(ofPixelsRef pixResult, const vector<float>& valu
         float r = values[i++];
         float g = values[i++];
         float b = values[i++];
-        float x = values[i++] * width;
-        float y = values[i++] * height;
+        float x = values[i++] * mWorkingWidth;
+        float y = values[i++] * mWorkingHeight;
         float sz = values[i++];
         float ang = values[i++];
         mDraw.renderBrush(pixResult, ofVec2f(x, y), mBrush[1], sz, ang, ofFloatColor(r, g, b));
@@ -117,9 +113,10 @@ float StrokeProblem::gMinSize = 5;
 float StrokeProblem::gMaxSize = 5;
 float StrokeProblem::gRotation = 1;
 
-void StrokeProblem::createPixels(ofPixelsRef pixResult, const vector<float>& values, ofImage& imgBase)
+void StrokeProblem::createPixels(ofPixelsRef pixResult, const vector<float>& values, ofImage& imgBase, int width, int height)
 {
-    assert (values.size() == mRanges.size() * mRepeat);
+    assert(values.size() == mRanges.size() * mRepeat);
+	pixResult.clear();
     pixResult.setFromPixels(imgBase.getPixels(), imgBase.getWidth(), imgBase.getHeight(), imgBase.getPixelsRef().getNumChannels());
     int i = 0;
     for (int is = 0; is < mRepeat; ++is)
@@ -129,8 +126,8 @@ void StrokeProblem::createPixels(ofPixelsRef pixResult, const vector<float>& val
 //        float b = values[i++];
 
         float sang = values[i++];
-        float x = values[i++] * width;
-        float y = values[i++] * height;
+        float x = values[i++] * mWorkingWidth;
+        float y = values[i++] * mWorkingHeight;
 
         float dx = values[i++] * gDeltaSize;
         float dy = values[i++] * gDeltaSize;
