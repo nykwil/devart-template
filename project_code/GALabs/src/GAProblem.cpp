@@ -4,9 +4,33 @@
 #include "ofxSimpleGuiToo.h"
 #include "ColorLook.h"
 #include <ppl.h>
-#include "ofxCvColorImageAlpha.h"
 
 int ITERS_PER_UPDATE = 10;
+
+float myMap01(float value, float outputMin, float outputMax) {
+	return (value * (outputMax - outputMin) + outputMin);
+}
+
+float myMap01(float value, float outputMin, float outputMax, bool clamp) {
+
+	float outVal = (value * (outputMax - outputMin) + outputMin);
+
+	if (clamp) {
+		if (outputMax < outputMin) {
+			if (outVal < outputMax)
+				outVal = outputMax;
+			else if (outVal > outputMin)
+				outVal = outputMin;
+		}
+		else {
+			if (outVal > outputMax)
+				outVal = outputMax;
+			else if (outVal < outputMin)
+				outVal = outputMin;
+		}
+	}
+	return outVal;
+}
 
 GAProblem::GAProblem() {
 	rootDir = ofToDataPath("");
@@ -109,62 +133,27 @@ void GAProblem::fillRandom(vector<float>& values) {
 }
 
 // @TODO fix
-float GetBright(ofColor col) {
+float GetBright(const ofColor& col) {
 	return (0.2126f * col.r) + (0.7152f * col.g) + (0.0722f * col.b);
 }
+
+enum CompareTypes
+{
+	CT_0,
+	CT_1,
+	CT_2,
+	CT_3,
+	CT_HSB,
+	CT_DELTA,
+	CT_LOOKUP,
+	CT_BRIGHT,
+	CT_CANNY
+};
 
 float GAProblem::compareImg(ofImage& imgNew, int method) {
 	assert(mImgCompare.getWidth() == imgNew.getWidth() && mImgCompare.getHeight() == imgNew.getHeight());
 
-	if (method >= 4) {
-		if (method == 8) {
-			return cannyComp(imgNew);
-		}
-		else if (method == 7) {
-			float diff = 0;
-			for (int w = 0; w < imgNew.getWidth(); ++w) {
-				for (int h = 0; h < imgNew.getHeight(); ++h) {
-					diff +=  255 - abs(GetBright(mImgCompare.getColor(w, h)) - GetBright(imgNew.getColor(w, h)));
-				}
-			}
-			return diff;
-		}
-		if (method == 6) {
-			float diff = 0;
-			for (int w = 0; w < mImgCompare.getWidth(); ++w) {
-				for (int h = 0; h < mImgCompare.getHeight(); ++h) {
-					diff += ColorLook::instance().getDelta(mImgCompare.getColor(w, h), imgNew.getColor(w, h));
-				}
-			}
-			return diff;
-		}
-		else if (method == 5) {
-			float diff = 0;
-			for (int w = 0; w < mImgCompare.getWidth(); ++w) {
-				for (int h = 0; h < mImgCompare.getHeight(); ++h) {
-					ofFloatColor c1 = mImgCompare.getColor(w, h);
-					ofFloatColor c2 = imgNew.getColor(w, h);
-
-					float delta = ColorCompare::deltaE1976(
-						ColorRGB(c1.r, c1.g, c1.b, false).toLinearRGB().toXYZ().toLab(),
-						ColorRGB(c2.r, c2.g, c2.b, false).toLinearRGB().toXYZ().toLab()
-						);
-					diff += ColorCompare::getMaxDelta() - delta;
-				}
-			}
-			return diff;
-		}
-		else {
-			float diff = 0;
-			for (int w = 0; w < mImgCompare.getWidth(); ++w) {
-				for (int h = 0; h < mImgCompare.getHeight(); ++h) {
-					diff += ColorCompare::HsbDiff(mImgCompare.getColor(w, h), imgNew.getColor(w, h));
-				}
-			}
-			return diff;
-		}
-	}
-	else {
+	if (method < 4) {
 		static ofxCvColorImage cvi1;
 		static ofxCvColorImage cvi2;
 		cvi1.setFromPixels(mImgCompare.getPixels(), mImgCompare.getWidth(), mImgCompare.getHeight());
@@ -211,6 +200,24 @@ float GAProblem::compareImg(ofImage& imgNew, int method) {
 		double base_test = compareHist(hist_base, hist_test, method);
 		return base_test;
 	}
+	else if (method == 4) {
+		return compHsb(imgNew);
+	}
+	else if (method == 5) {
+		return compColorDelta(imgNew);
+	}
+	if (method == 6) {
+		return compLookup(imgNew);
+	}
+	else if (method == 7) {
+		return compBright(imgNew);
+	}
+	else if (method == 8) {
+		return compCanny(imgNew);
+	}
+	else {
+		return 9000;
+	}
 }
 
 void GAProblem::threadedFunction() {
@@ -250,19 +257,21 @@ void saveFloat(const string& filename, vector<float> values) {
 
 void GAProblem::go() {
 	static float mLastFit = 0;
+	static float mStartImageTimer = 0;
 
 	if (mUseDna && !gui.isOn()) {
 		if (!mGALib.started) {
+			mStartImageTimer = ofGetElapsedTimef();
 			mGALib.setup(mRanges, mRepeat, mPopSize, mNGen);
 		}
 		float startt = ofGetElapsedTimef();
 		float result = mGALib.run(mTimes);
-		float endt = ofGetElapsedTimef();
-
-//		cout << ("time: " + ofToString((endt - startt)* mNGen)).c_str() << endl;;
+		cout << ("est time: " + ofToString((ofGetElapsedTimef() - startt) * mNGen)).c_str() << "\t";
 		if (mGALib.done()) {
 			float fit = fitnessTest(mGALib.mOut);
 			updateWorkImage();
+			cout << ("\nactual time: " + ofToString((ofGetElapsedTimef() - mStartImageTimer) * mNGen)).c_str() << "\n";
+
 			if (fit > mLastFit) {
 				createPixels(mFinalPixels, mGALib.mOut, mLastFinal, mFinalWidth, mFinalHeight);
 				pushValuesFinal(mGALib.mOut, mFinalPixels);
@@ -331,10 +340,21 @@ ofxCvGrayscaleImage cvCannyImgComp;
 
 using namespace concurrency;
 
-float GAProblem::cannyComp(ofImage& imgNew)
+void GAProblem::createCanny(ofImage &imgNew, ofxCvGrayscaleImage &canny)
 {
+	ofxCvGrayscaleImage cvImgGray;
+	imgNew.setImageType(OF_IMAGE_GRAYSCALE);
+	cvImgGray.allocate(imgNew.getWidth(), imgNew.getHeight());
+	cvImgGray.setFromPixels(imgNew.getPixelsRef());
+
+	canny.allocate(cvImgGray.getWidth(), cvImgGray.getHeight());  
+	cvCanny(cvImgGray.getCvImage(), canny.getCvImage(), 50.0, 120.0);
+}
+
+float GAProblem::compCanny(ofImage& imgNew) {
 	if (cvCannyImgComp.getWidth() == 0) {
 		createCanny(mImgCompare, cvCannyImgComp);
+		updateCompImage(cvCannyImgComp);
 	}
 
 	ofxCvGrayscaleImage canny;  
@@ -345,31 +365,65 @@ float GAProblem::cannyComp(ofImage& imgNew)
 	auto oldpix = cvCannyImgComp.getPixels();
 
 	combinable<float> sum;
-
 	parallel_for(int(0), (int)(canny.getWidth() * canny.getHeight()), [&](int i)
 	{
 		sum.local() += 255 - abs(oldpix[i] - newpix[i]);
 	});
 	return sum.combine(plus<float>());
-
-// 	int i = 0;
-// 	float diff = 0;
-// 	for(int y = 0; y < canny.getHeight(); y += 1) {
-// 		for(int x = 0; x < canny.getWidth(); x += 1, ++i) {
-// 			diff += 255 - abs(oldpix[i] - newpix[i]);
-// 		}
-// 	}
-// 	return diff;
 }
 
-void GAProblem::createCanny(ofImage &imgNew, ofxCvGrayscaleImage &canny)
+float GAProblem::compColorDelta(ofImage &imgNew)
 {
-	ofxCvGrayscaleImage cvImgGray;
-	imgNew.setImageType(OF_IMAGE_GRAYSCALE);
-	cvImgGray.allocate(imgNew.getWidth(), imgNew.getHeight());
-	cvImgGray.setFromPixels(imgNew.getPixelsRef());
+	updateCompImage(imgNew);
 
-	canny.allocate(cvImgGray.getWidth(), cvImgGray.getHeight());  
-	cvCanny(cvImgGray.getCvImage(), canny.getCvImage(), 50.0, 120.0);
+	combinable<float> sum;
+	parallel_for(int(0), (int)(imgNew.getWidth() * imgNew.getHeight()), [&](int i)
+	{
+		ofFloatColor c1 = mImgCompare.getColor(i);
+		ofFloatColor c2 = imgNew.getColor(i);
+
+		float delta = ColorCompare::deltaE1976(
+			ColorRGB(c1.r, c1.g, c1.b, false).toLinearRGB().toXYZ().toLab(),
+			ColorRGB(c2.r, c2.g, c2.b, false).toLinearRGB().toXYZ().toLab()
+			);
+		sum.local() += ColorCompare::getMaxDelta() - delta;
+	});
+	return sum.combine(plus<float>());
+}
+
+float GAProblem::compLookup(ofImage &imgNew)
+{
+	updateCompImage(imgNew);
+
+	combinable<float> sum;
+	parallel_for(int(0), (int)(imgNew.getWidth() * imgNew.getHeight()), [&](int i)
+	{
+		sum.local() += ColorLook::instance().getDelta(mImgCompare.getColor(i), imgNew.getColor(i));
+	});
+	return sum.combine(plus<float>());
+}
+
+float GAProblem::compBright(ofImage &imgNew)
+{
+	updateCompImage(imgNew);
+
+	combinable<float> sum;
+	parallel_for(int(0), (int)(imgNew.getWidth() * imgNew.getHeight()), [&](int i)
+	{
+		sum.local() +=  255 - abs(GetBright(mImgCompare.getColor(i)) - GetBright(imgNew.getColor(i)));
+	});
+	return sum.combine(plus<float>());
+}
+
+float GAProblem::compHsb(ofImage &imgNew)
+{
+	updateCompImage(imgNew);
+
+	combinable<float> sum;
+	parallel_for(int(0), (int)(imgNew.getWidth() * imgNew.getHeight()), [&](int i)
+	{
+		sum.local() += ColorCompare::HsbDiff(mImgCompare.getColor(i), imgNew.getColor(i));
+	});
+	return sum.combine(plus<float>());
 }
 

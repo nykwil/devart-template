@@ -31,19 +31,6 @@ public:
 		return getColour(palette[(int)((f - 0.000001f) * palette.size())]);
 	}
 
-	void buildColourLookup()
-	{
-		ofColor c(ofRandom(0, 255), ofRandom(0, 255), ofRandom(0, 255));
-		unsigned int i = getIndex(c.r, c.g, c.b);
-		ofColor co = getColour(i);
-
-		unsigned int maxi = getIndex(255, 255, 255);
-		colourLookup.resize(maxi + 1);
-		for (unsigned int i1 = 0; i1 <= maxi; ++i1) {
-			colourLookup[i1].resize(i1 + 1);
-		}
-	}
-
 	float getDelta(const ofColor& col1, const ofColor& col2)
 	{
 		int i1 = getIndex(col1.r,col1.g,col1.b);
@@ -68,21 +55,7 @@ public:
 		return colourLookup[i1][i2];
 	}
 
-	void buildPalette(ofImage& img) 
-	{
-		vector<bool> adds(getIndex(255, 255, 255) + 1);
-
-		for (int x = 0; x < img.getWidth(); ++x) {
-			for (int y = 0; y < img.getHeight(); ++y) {
-				ofColor col = img.getColor(x, y);
-				unsigned short i = getIndex(col.r, col.g, col.b);
-				if (!adds[i])
-					palette.push_back(i);
-
-				adds[i] = true;
-			}
-		}
-	}
+	void buildPalette(ofImage& img);
 
 	void sort();
 

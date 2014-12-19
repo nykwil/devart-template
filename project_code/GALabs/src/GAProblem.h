@@ -5,6 +5,9 @@
 #include "ofxOpenCv.h"
 #include "Drawer.h"
 
+float myMap01(float value, float outputMin, float outputMax, bool clamp); 
+float myMap01(float value, float outputMin, float outputMax); 
+
 class GAProblem : public ofThread 
 {
 public:
@@ -31,7 +34,15 @@ public:
 
 	float compareImg(ofImage& imgNew, int method);
 
-	float cannyComp(ofImage& imgNew);
+	float compHsb(ofImage &imgNew);
+
+	float compBright(ofImage &imgNew);
+
+	float compLookup(ofImage &imgNew);
+
+	float compColorDelta(ofImage &imgNew);
+
+	float compCanny(ofImage& imgNew);
 
 	void createCanny(ofImage &imgNew, ofxCvGrayscaleImage &canny);
 
@@ -158,6 +169,8 @@ public:
 class StripProblem : public GAProblem
 {
 public:
+	StripProblem();
+
 	virtual void setup();
 	virtual void setRanges();
 	virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height);

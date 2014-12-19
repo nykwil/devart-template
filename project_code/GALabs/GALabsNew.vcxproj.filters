@@ -226,7 +226,6 @@
     <ClCompile Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxPolyline2Mesh.cpp">
       <Filter>addons\NewFilter2</Filter>
     </ClCompile>
-    <ClCompile Include="src\ofxCvColorImageAlpha.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -837,7 +836,6 @@
     <ClInclude Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxPolyline2Mesh.h">
       <Filter>addons\NewFilter2</Filter>
     </ClInclude>
-    <ClInclude Include="src\ofxCvColorImageAlpha.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />

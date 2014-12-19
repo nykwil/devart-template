@@ -15,9 +15,9 @@ float gMinThresh = 0;
 float gMaxThresh = 250.0f;
 float gThreshThresh = 50.0f;
 float gThreshSteps = 4.f;
+float gMaxScale = 600.f;
 float MAX_WIDTH_MULTIPLIER = 100.f;
 
-bool gDebugOn = false;
 float gDebugThresh = 500;
 float gDebugImage = 0;
 
@@ -60,6 +60,7 @@ CollageProblem::CollageProblem() : GAProblem() {
 	gui.addSlider("MinThresh", gMinThresh, 0.0f, 1000.0f);
 	gui.addSlider("MaxThresh", gMaxThresh, 0.0f, 1000.0f);
 	gui.addSlider("ThreshSteps", gThreshSteps, 0.0f, 10.0f);
+	gui.addSlider("MaxScale", gMaxScale, 100.0f, 2000.0f);
 
 	gui.addSlider("capType",capType,  0, 3);
 	gui.addSlider("jointType", jointType, 0, 2);
@@ -77,7 +78,6 @@ CollageProblem::CollageProblem() : GAProblem() {
 	gui.addToggle("useFatline", useFatline);
 
 	gui.addTitle("-- Debug --");
-	gui.addToggle("DebugOn", gDebugOn);
 	gui.addSlider("DebugThresh", gDebugThresh, 0.0f, 1.0f);
 	gui.addSlider("DebugImage", gDebugImage, 0.0f, 0.99999f);
 }
@@ -262,26 +262,26 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 
 	pixResult.clear();
 
+	ofFbo::Settings setts;
+	setts.width = width;
+	setts.height = height;
+	setts.internalformat = GL_RGB;
+
 	ofFbo mFbo;
-
-	ofFbo::Settings sett;
-	sett.width = width;
-	sett.height = height;
-	mFbo.allocate(sett);
+	mFbo.allocate(setts);
 	mFbo.begin();
+	ofClear(255,255,255,255);
 
-	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
-	ofClear(255);
-	ofSetColor(255, 255, 255, 255);
+	ofSetColor(255);
+	ofBlendMode(OF_BLENDMODE_DISABLED);
 	baseImage.draw(0, 0);
-	ofClearAlpha();
 
 	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 	for (int ir = 0; ir < mRepeat; ++ir) {
 		float x = values[ir * RT_MAX + RT_X] * width;
 		float y = values [ir * RT_MAX + RT_Y] * height;
 		float deg = values[ir * RT_MAX + RT_DEG];
-		float scale = values[ir * RT_MAX + RT_SCALE] * (width / 600);
+		float scale = values[ir * RT_MAX + RT_SCALE] * (width / gMaxScale);
 		int iimg = (int)(values[ir * RT_MAX + RT_IMAGE] * (float)mImages.size());
 
 		ImageCache& imgCache = mImages[iimg];

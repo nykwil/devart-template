@@ -1,13 +1,23 @@
 #include "ofApp.h"
 #include "ofxSimpleGuiToo.h"
-#include "ofxFatLine.h"
+//#include "ofxFatLine.h"
+
+// @TODO clear button
+// @TODO clean up variables in collage set reasonable defaults
 
 bool bRun = false;
 bool bDebug = false;
 bool bDrawAll = true;
-ofImage imgOther;
+ofImage imgComp;
 ofImage imgWork;
 ofImage imgFinal;
+int width;
+int height;
+
+ofPixels pixResult;
+ofImage baseImage;
+
+bool terrible = false;;
 
 //--------------------------------------------------------------
 void ofApp::update(){
@@ -54,14 +64,6 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 
-int width;
-int height;
-
-ofPixels pixResult;
-ofImage baseImage;
-
-bool terrible = false;;
-
 void ofApp::setup() {
 
 	gui.addToggle("Run", bRun);
@@ -74,7 +76,8 @@ void ofApp::setup() {
 		return;
 	}
 
-	mDna = new CollageProblem();
+//	mDna = new CollageProblem();
+	mDna = new StripProblem();
 	mDna->setup();
 	width = mDna->mWorkingWidth;
 	height = mDna->mWorkingHeight;
@@ -83,43 +86,10 @@ void ofApp::setup() {
 
 	gui.setup();
 	gui.setDefaultKeys(true);
-
-	// 	ofFbo::Settings sett;
-	// 	sett.width = 100;
-	// 	sett.height = 100;
-	// 	fbo.allocate(sett);
-	// 	fbo.begin();
-	// 	ofClear(255,255,255, 0);
-	// 	fbo.end();
-	// // 	pixResult.allocate(100, 100, 4);
-	// // 	workingImage.allocate(100, 100, OF_IMAGE_COLOR_ALPHA);
-	// 
-	// 	fbo.begin();
-	// 	ofEnableAlphaBlending();
-	// 	ofClear(255, 255, 255, 0);
-	// 	ofSetColor(255, 0, 0, 255);
-	// 	ofRect(25, 25, 25, 125);
-	//  	ofEnableBlendMode(OF_BLENDMODE_SUBTRACT);
-	// 	ofSetColor(0, 0, 0, 100);
-	// 	ofRect(30, 30, 20, 20);
-	// 	ofSetColor(0, 0, 0, 155);
-	// 	ofRect(35, 35, 5, 5);
-	// 	fbo.end();
-	// 
-	// 	ofEnableAlphaBlending();
-	// 
-	// 	pixResult.clear();
-	// 	ofPixelsRef pixResultRef = pixResult;
-	// 	fbo.readToPixels(pixResultRef);
-	// 	workingImage.setFromPixels(pixResult);
-	// 	static int sadf = 0;
-	// 	ofSaveImage(workingImage.getPixels(), "file1.png", OF_IMAGE_QUALITY_BEST);
 }
 
 void ofApp::draw() {
 	ofBackground(0);
-
-	//	fatline.draw();
 
 	if (terrible) {
 		ofFbo mFbo;
@@ -157,15 +127,17 @@ void ofApp::draw() {
 		ofSetColor(255);
 
 		if (bDrawAll) {
-			mDna->getCompImg(imgOther);
-			if (imgOther.getWidth() > 0) {
-				imgOther.draw(0, 0, width, height);
-				ofDrawBitmapString("Other", 0, 10);
+			mDna->getCompImg(imgComp);
+			if (imgComp.getWidth() > 0) {
+				imgComp.draw(0, 0, width, height);
+				ofDrawBitmapString("Comp", 0, 10);
 			}	
 
 			mDna->getWorkImg(imgWork);
-			imgWork.draw(width, 0, width, height);
-			ofDrawBitmapString("Work", width, 10);
+			if (imgWork.getWidth() > 0) {
+				imgWork.draw(width, 0, width, height);
+				ofDrawBitmapString("Work", width, 10);
+			}	
 
 			mDna->mImgOrig.draw(0, height, width, height + 10);
 			ofDrawBitmapString("Orig", 0, height);
