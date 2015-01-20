@@ -1,4 +1,4 @@
-#include "GAProblem.h"
+#include "Drawer.h"
 #include <assert.h>
 
 float Drawer::UNITS_PER_POINT = 4.f;
@@ -111,7 +111,7 @@ void Drawer::stroke(ofPixels& pixDest, ofImage& imgBrush, const ofFloatColor& co
     stroke(pixDest, imgBrush, colMult, brushSize, line);
 }
 
-void Drawer::stroke( ofPixels& pixDest, ofImage& imgBrush, const ofFloatColor& colMult, float brushSize, const ofPolyline& iline) {
+void Drawer::stroke(ofPixels& pixDest, ofImage& imgBrush, const ofFloatColor& colMult, float brushSize, const ofPolyline& iline) {
 //    line.getSmoothed(0,0);
     ofPolyline line = iline.getResampledBySpacing((int)UNITS_PER_POINT);
 

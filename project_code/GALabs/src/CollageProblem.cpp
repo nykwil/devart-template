@@ -1,4 +1,4 @@
-#include "GAProblem.h"
+#include "TestProblem.h"
 #include <assert.h>
 #include "ColorConvert.h"
 #include "ofxSimpleGuiToo.h"

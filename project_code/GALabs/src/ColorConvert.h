@@ -28,11 +28,15 @@ public:
 	static float deltaE2000(const ColorLChab& lch1, const ColorLChab& lch2);
 
 	static float HsbDiff(const ofColor& c1, const ofColor& c2);
-	static float getMaxDelta();
+
+	static float GetBright(const ofColor& col) {
+		return (0.2126f * col.r) + (0.7152f * col.g) + (0.0722f * col.b);
+	}
+
+	static float BrightDiff(const ofColor& c1, const ofColor& c2);
 };
 
-class ColorRGB
-{
+class ColorRGB {
 public:
 	float R;
 	float G;
@@ -40,12 +44,12 @@ public:
 	bool clamped;
 
 	ColorRGB(float R, float G, float B, bool clamped);
+	ColorRGB(const ofFloatColor& color, bool clamped);
 
 	ColorHSV toHSV();
 	ColorHSL toHSL();
 
-	float toLinearRGBc(float c)
-	{
+	float toLinearRGBc(float c) {
 		if(c > 0.04045f) 
 			return pow((c + 0.055f) / 1.055f, 2.4f);
 		return c / 12.92f;
@@ -66,8 +70,7 @@ public:
 
 	ColorLinearRGB(float R, float G, float B, bool clamped);
 	
-	float toRGBc(float c)
-	{
+	float toRGBc(float c) {
 		if(c > 0.0031308f) 
 			return pow(c, 1.f / 2.4f) * 1.055f - 0.055f;
 			
@@ -78,8 +81,7 @@ public:
 	ColorXYZ toXYZ();
 };
 
-class ColorXYZ
-{
+class ColorXYZ {
 public:
 	float X;
 	float Y;

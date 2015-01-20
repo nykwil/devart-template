@@ -1,4 +1,4 @@
-#include "GAProblem.h"
+#include "TestProblem.h"
 #include <assert.h>
 #include "ColorConvert.h"
 #include "ofxSimpleGuiToo.h"
@@ -28,10 +28,6 @@ StripProblem::StripProblem() : GAProblem() {
 	gui.addSlider("MaxAlpha", gMaxAlpha, 0.0f, 255.0f);
 }
 
-void StripProblem::setup() {
-	GAProblem::setup();
-}
-
 void StripProblem::setRanges() {
 	mRanges.resize(RT_MAX);
 
@@ -46,6 +42,7 @@ void StripProblem::setRanges() {
 
 void StripProblem::createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height) {
 	assert(values.size() == mRanges.size() * mRepeat);
+	assert(baseImage.getWidth() == width && baseImage.getHeight() == height);
 
 	pixels.clear();
 
@@ -77,11 +74,11 @@ void StripProblem::createPixels(ofPixelsRef pixels, const vector<float>& values,
 		if (blend == 0) {
 			ofBlendMode(OF_BLENDMODE_ALPHA);
 		}
-		else if (blend == 2) {
-			ofBlendMode(OF_BLENDMODE_SUBTRACT);
-		}
 		else if (blend == 1) {
 			ofBlendMode(OF_BLENDMODE_ADD);
+		}
+		else if (blend == 2) {
+			ofBlendMode(OF_BLENDMODE_SUBTRACT);
 		}
 		else if (blend == 3) {
 			ofBlendMode(OF_BLENDMODE_SCREEN);
@@ -91,10 +88,10 @@ void StripProblem::createPixels(ofPixelsRef pixels, const vector<float>& values,
 		ofSetColor(col);
 		ofPushMatrix();
 		ofTranslate(x, y);
-		if (ang > 180) {
-			ofRotateZ(90);
-
-		}
+		ofRotateZ(ang);
+// 		if (ang > 180) {
+// 			ofRotateZ(90);
+// 		}
 		ofRect(-(width + w), -w / 2, (width + w) * 2, w);
 		// ofCircle(x,y,z);
 		// ofBox(x,y,z,w);
@@ -105,3 +102,27 @@ void StripProblem::createPixels(ofPixelsRef pixels, const vector<float>& values,
     mFbo.readToPixels(pixels);
 }
 
+void StripProblem::debugDraw()
+{
+	ofSetColor(255);
+	ofBlendMode(OF_BLENDMODE_DISABLED);
+	ofClear(0);
+
+	float x = 0;
+	float y = 0;
+
+	int iy = (sqrt(ColorLook::instance().getSize()) + 1);
+	float w = ofGetHeight() / (float)ColorLook::instance().getSize() * iy;
+	for (int i = 0; i < ColorLook::instance().getSize(); ++i) {
+		ofColor c = ColorLook::instance().getPalette((float)i / ColorLook::instance().getSize());
+		ofSetColor(c);
+		ofRect(x, y, w, w);
+		if (x > ofGetWidth()) {
+			x = 0;
+			y += w;
+		}
+		else {
+			x += w;
+		}
+	}
+}

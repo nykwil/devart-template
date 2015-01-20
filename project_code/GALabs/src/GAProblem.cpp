@@ -76,7 +76,6 @@ void GAProblem::setup() {
 	mImgCompare = mImgOrig;
 	mImgCompare.resize(mCompareWidth, mCompareHeight);
 	ColorLook::instance().buildPalette(mImgCompare);
-	ColorLook::instance().sort();
 
 	ofImage img;
 	{
@@ -130,11 +129,6 @@ void GAProblem::fillRandom(vector<float>& values) {
 	for (int i = 0; i < values.size(); ++i) {
 		values[i] = ofRandom(mRanges[i % mRanges.size()].mMin, mRanges[i % mRanges.size()].mMax);
 	}
-}
-
-// @TODO fix
-float GetBright(const ofColor& col) {
-	return (0.2126f * col.r) + (0.7152f * col.g) + (0.0722f * col.b);
 }
 
 enum CompareTypes
@@ -364,7 +358,7 @@ float GAProblem::compCanny(ofImage& imgNew) {
 	auto newpix = canny.getPixels();
 	auto oldpix = cvCannyImgComp.getPixels();
 
-	combinable<float> sum;
+	combinable<float> sum; 
 	parallel_for(int(0), (int)(canny.getWidth() * canny.getHeight()), [&](int i)
 	{
 		sum.local() += 255 - abs(oldpix[i] - newpix[i]);
@@ -386,7 +380,7 @@ float GAProblem::compColorDelta(ofImage &imgNew)
 			ColorRGB(c1.r, c1.g, c1.b, false).toLinearRGB().toXYZ().toLab(),
 			ColorRGB(c2.r, c2.g, c2.b, false).toLinearRGB().toXYZ().toLab()
 			);
-		sum.local() += ColorCompare::getMaxDelta() - delta;
+		sum.local() += ColorLook::instance().getMaxDelta() - delta;
 	});
 	return sum.combine(plus<float>());
 }
@@ -410,7 +404,7 @@ float GAProblem::compBright(ofImage &imgNew)
 	combinable<float> sum;
 	parallel_for(int(0), (int)(imgNew.getWidth() * imgNew.getHeight()), [&](int i)
 	{
-		sum.local() +=  255 - abs(GetBright(mImgCompare.getColor(i)) - GetBright(imgNew.getColor(i)));
+		sum.local() += ColorCompare::BrightDiff(mImgCompare.getColor(i), imgNew.getColor(i));
 	});
 	return sum.combine(plus<float>());
 }

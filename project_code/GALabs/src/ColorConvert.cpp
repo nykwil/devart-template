@@ -67,13 +67,6 @@ float colmax(float r, float g, float b)
     return max(r, max(g, b));
 }
 
-static float maxDelta = 105;
-
-float ColorCompare::getMaxDelta()
-{
-    return maxDelta;
-}
-
 // CIE Delta E 1976
 // JND: ~2.3
 float ColorCompare::deltaE1976(const ColorLab& lab1, const ColorLab& lab2)
@@ -83,7 +76,6 @@ float ColorCompare::deltaE1976(const ColorLab& lab1, const ColorLab& lab2)
 	float delta_b = lab1.b - lab2.b;
 
     float delta = sqrt(delta_L * delta_L + delta_a * delta_a + delta_b * delta_b);
-    maxDelta = max(maxDelta, delta);
 	return delta;
 }
 
@@ -186,12 +178,26 @@ float ColorCompare::HsbDiff(const ofColor& c1, const ofColor& c2)
         fabs(h1.z - h2.z) / 255.f * bw);
 }
 
-ColorRGB::ColorRGB( float R, float G, float B, bool clamped )
+float ColorCompare::BrightDiff( const ofColor& c1, const ofColor& c2 )
+{
+	static float maxBright = GetBright(ofColor(255, 255, 255));
+	return maxBright - abs(GetBright(c1) - GetBright(c2));
+}
+
+ColorRGB::ColorRGB(float R, float G, float B, bool clamped)
 {
     this->clamped = clamped || R < 0 || R > 1 || G < 0 || G > 1 || B < 0 || B > 1;
     this->R = clamp(R, 0, 1);
     this->G = clamp(G, 0, 1);
     this->B = clamp(B, 0, 1);
+}
+
+ColorRGB::ColorRGB(const ofFloatColor& color, bool clamped) 
+{
+	this->clamped = clamped || color.r < 0 || color.r > 1 || color.g < 0 || color.g > 1 || color.b < 0 || color.b > 1;
+	this->R = clamp(color.r, 0, 1);
+	this->G = clamp(color.g, 0, 1);
+	this->B = clamp(color.b, 0, 1);
 }
 
 ColorLinearRGB ColorRGB::toLinearRGB()
@@ -270,7 +276,7 @@ ColorYIQ ColorRGB::toYIQ()
         this->clamped);
 }
 
-ColorLinearRGB::ColorLinearRGB( float R, float G, float B, bool clamped )
+ColorLinearRGB::ColorLinearRGB(float R, float G, float B, bool clamped)
 {
     this->clamped = clamped || R < 0 || R > 1 || G < 0 || G > 1 || B < 0 || B > 1;
     this->R = clamp(R, 0, 1);
@@ -292,7 +298,7 @@ ColorXYZ ColorLinearRGB::toXYZ()
         this->clamped);
 }
 
-ColorXYZ::ColorXYZ( float X, float Y, float Z, bool clamped )
+ColorXYZ::ColorXYZ(float X, float Y, float Z, bool clamped)
 {
     this->clamped = clamped || X < 0 || X > refX || Y < 0 || Y > refY || Z < 0 || Z > refZ;
 
@@ -322,7 +328,7 @@ ColorxyY ColorXYZ::toxyY()
     return ColorxyY(this->X / div, this->Y / div, this->Y, this->clamped);
 }
 
-float ColorXYZ::toLabc( float c )
+float ColorXYZ::toLabc(float c)
 {
     if (c > 216.f / 24389.f) 
         return cv::cubeRoot(c);
@@ -359,8 +365,7 @@ ColorLuv ColorXYZ::toLuv()
     if(yr > 216.f / 24389.f) {
         L = cv::cubeRoot(yr) * 116.f - 16.f;
     }
-    else
-    {
+    else {
         L = yr * (24389.f / 27.f);
     }
 
@@ -382,7 +387,7 @@ ColorLab ColorLChab::toLab()
     return ColorLab(this->L, cos(h) * this->C, sin(h) * this->C, this->clamped);
 }
 
-ColorLShuv::ColorLShuv( float L, float S, float h, bool clamped )
+ColorLShuv::ColorLShuv(float L, float S, float h, bool clamped)
 {
     this->clamped = clamped || L < 0 || L > 100.f; // TODO: what is S min/max?
 
@@ -396,7 +401,7 @@ ColorLChuv ColorLShuv::toLChuv()
     return ColorLChuv(this->L, this->S * this->L, this->h, this->clamped);
 }
 
-ColorLChuv::ColorLChuv( float L, float C, float h, bool clamped )
+ColorLChuv::ColorLChuv(float L, float C, float h, bool clamped)
 {
     this->clamped = clamped || L < 0 || L > 100.f || C < 0 || C > 7.40066582332174237e2f;
 
@@ -416,7 +421,7 @@ ColorLuv ColorLChuv::toLuv()
     return ColorLuv(this->L, cos(h) * this->C, sin(h) * this->C, this->clamped);
 }
 
-ColorLuv::ColorLuv( float L, float u, float v, bool clamped )
+ColorLuv::ColorLuv(float L, float u, float v, bool clamped)
 {
     this->clamped = clamped || L < 0 || L > 100 || u < -81304600.f / 316141.f || v > 54113280.f / 316141.f; // TODO: what is u max, and v min??
 
@@ -461,7 +466,7 @@ ColorXYZ ColorLuv::toXYZ()
     return ColorXYZ(X, Y, Z, this->clamped);
 }
 
-ColorLab::ColorLab( float L, float a, float b, bool clamped )
+ColorLab::ColorLab(float L, float a, float b, bool clamped)
 {
     this->clamped = clamped || L < 0.f || L > 100.f || a < -12500.f / 29.f || a > 12500.f / 29.f || b < -5000.f / 29.f || b > 5000.f / 29.f;
 
@@ -470,7 +475,7 @@ ColorLab::ColorLab( float L, float a, float b, bool clamped )
     this->b = clamp(b, -5000.f / 29.f, 5000.f / 29.f);
 }
 
-float ColorLab::toXYZc( float c )
+float ColorLab::toXYZc(float c)
 {
     float c3 = c * c * c;
 
@@ -500,7 +505,7 @@ ColorLChab ColorLab::toLChab()
         this->clamped);
 }
 
-ColorxyY::ColorxyY( float x, float y, float Y, bool clamped )
+ColorxyY::ColorxyY(float x, float y, float Y, bool clamped)
 {
     this->clamped = clamped || x < 0 || x > 1 || y < 0 || y > 1 || Y < 0 || Y > 1;
 
@@ -522,7 +527,7 @@ ColorXYZ ColorxyY::toXYZ()
     }
 }
 
-ColorHSV::ColorHSV( float H, float S, float V, bool clamped )
+ColorHSV::ColorHSV(float H, float S, float V, bool clamped)
 {
     this->clamped = clamped || S < 0 || S > 1 || V < 0 || V > 1;
     this->H = clamphue(H);
@@ -558,7 +563,7 @@ ColorRGB ColorHSV::toRGB()
     return ColorRGB(C, X, m, this->clamped);
 }
 
-ColorHSL::ColorHSL( float H, float S, float L, bool clamped )
+ColorHSL::ColorHSL(float H, float S, float L, bool clamped)
 {
     this->clamped = clamped || S < 0.f || S > 1.f || L < 0.f || L > 1.f;
     this->H = clamphue(H);
@@ -594,7 +599,7 @@ ColorRGB ColorHSL::toRGB()
     return ColorRGB(C, X, m, this->clamped);
 }
 
-ColorYUV::ColorYUV( float Y, float U, float V, bool clamped )
+ColorYUV::ColorYUV(float Y, float U, float V, bool clamped)
 {
     this->clamped = clamped || Y < 0.f || Y > 1.f || U < 0.f || V > 1.f || V < 0.f || V > 1.f;
     this->Y = clamp(Y, 0.f, 1.f);
@@ -616,7 +621,7 @@ ColorRGB ColorYUV::toRGB()
     return ColorRGB(r, g, b, this->clamped);
 }
 
-ColorYIQ::ColorYIQ( float Y, float I, float Q, bool clamped )
+ColorYIQ::ColorYIQ(float Y, float I, float Q, bool clamped)
 {
     this->clamped = clamped || Y < 0.f || Y > 1.f || I < 0.f || I > 1.f || Q < 0.f || Q > 1.f;
     this->Y = clamp(Y, 0.f, 1.f);
