@@ -99,8 +99,11 @@ float ColorLook::getDeltaFromIndex(int i1, int i2)
 	else if (i2 > i1)
 		std::swap(i1, i2);
 
-	if (colorLookup[i1 * maxColor + i2] == 0) 
-	{
+	if (i1 * maxColor + i2 >= colorLookup.size() ) {
+		colorLookup.resize(i1 * maxColor + i2 + 1, 0);
+	}
+
+	if (colorLookup[i1 * maxColor + i2] == 0) {
 		ofColor c1 = getColor(i1);
 		ofColor c2 = getColor(i2);
 		float delta = ColorCompare::deltaE1976(
@@ -108,9 +111,7 @@ float ColorLook::getDeltaFromIndex(int i1, int i2)
 			ColorRGB(c2, true).toLinearRGB().toXYZ().toLab()
 			);
 
-		if (delta > maxDelta) {
-			cout << "What" << endl;
-		}
+		assert (delta <= maxDelta);
 
 		float d = (maxDelta - delta) / maxDelta * 255.9999f;
 		colorLookup[i1 * maxColor + i2] = (unsigned char)d;
@@ -124,7 +125,6 @@ float ColorLook::getDeltaFromIndex(int i1, int i2)
 ColorLook::ColorLook()
 {
 	maxColor = getIndex(255,255,255) + 1;
-	colorLookup.resize(maxColor * maxColor);
 
 	float delta = ColorCompare::deltaE1976(
 		ColorRGB(ofColor(0), true).toLinearRGB().toXYZ().toLab(),

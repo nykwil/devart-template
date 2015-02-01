@@ -58,7 +58,6 @@ GAProblem::GAProblem() {
 }
 
 void GAProblem::setup() {
-	gui.loadFromXML();
 
 	{
 		ofDirectory dir(rootDir + "target/");
@@ -131,8 +130,7 @@ void GAProblem::fillRandom(vector<float>& values) {
 	}
 }
 
-enum CompareTypes
-{
+enum CompareTypes {
 	CT_0,
 	CT_1,
 	CT_2,

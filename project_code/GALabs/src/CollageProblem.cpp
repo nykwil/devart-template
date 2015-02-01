@@ -2,16 +2,13 @@
 #include <assert.h>
 #include "ColorConvert.h"
 #include "ofxSimpleGuiToo.h"
-#include "ofxFatLine.h"
-#include "ofNode.h"
 
-float gMinSize =  0.1;
-float gMaxSize = 0.8;
+float gMinSize = 0.0005f;
+float gMaxSize = 0.98f;
 int gConsider = 250;
-float gTolerance = 0.1f;
-float gSpacing = 1.f;
-float gSmoothing = 1.f;
-float gMinThresh = 0;
+float gSpacing = 0.5f;
+float gSmoothing = 0.03f;
+float gMinThresh = 90;
 float gMaxThresh = 250.0f;
 float gThreshThresh = 50.0f;
 float gThreshSteps = 4.f;
@@ -20,26 +17,16 @@ float MAX_WIDTH_MULTIPLIER = 100.f;
 
 float gDebugThresh = 500;
 float gDebugImage = 0;
+bool gDebugRefresh = false;
 
-ofFloatColor lineColor = ofColor::white;
+ofFloatColor mLineColor = ofColor(0, 0, 0, 128);
 
-int capType = 0;
-int jointType = 0;
-int blendMode = 1;
+int mBlendMode = 3;
 
-float globalWidth = 1.f;
-bool bFeather = false;
+float mLineWidth = 1.5f;
 
-float feathering = 1.f;
-bool bTriangulation = false;
-bool bFeatherAtCore = false;
-bool bFeatherAtCap = false;
-
-bool exportFiles = false;
-bool useFatline = true;
-
-ofxFatLine fatline; 
-ofPolyline line;
+bool mExportFiles = false;
+bool mUseFatline = false;
 
 CollageProblem::CollageProblem() : GAProblem() {
 	mCompMethod = 7;
@@ -49,12 +36,11 @@ CollageProblem::CollageProblem() : GAProblem() {
 	mPopSize = 20;
 	mNGen = 20;
 
-	gui.addTitle("-- Collage --");
+	gui.addPage("Collage");
 	gui.addSlider("Consider", gConsider, 0.0f, 500.0f);
 	gui.addSlider("MinSize", gMinSize, 0.0f, 0.01f);
 	gui.addSlider("MaxSize", gMaxSize, 0.0f, 1.0f);
-	gui.addSlider("Tolerance", gTolerance, 0.0f, 1.0f);
-	gui.addSlider("Spacing", gSpacing, 0.0f, 100.0f);
+	gui.addSlider("Spacing", gSpacing, 0.0f, 10.0f);
 	gui.addSlider("Smoothing", gSmoothing, 0.0f, 1.0f);
 
 	gui.addSlider("MinThresh", gMinThresh, 0.0f, 1000.0f);
@@ -62,24 +48,17 @@ CollageProblem::CollageProblem() : GAProblem() {
 	gui.addSlider("ThreshSteps", gThreshSteps, 0.0f, 10.0f);
 	gui.addSlider("MaxScale", gMaxScale, 100.0f, 2000.0f);
 
-	gui.addSlider("capType",capType,  0, 3);
-	gui.addSlider("jointType", jointType, 0, 2);
-	gui.addSlider("blendMode", blendMode, 0, 5);
-	gui.addColorPicker("lineColor", lineColor);
+	gui.addColorPicker("LineColor", mLineColor);
+	gui.addSlider("LinelWidth", mLineWidth, 0.f, 10.f);
+	gui.addToggle("UseFatline", mUseFatline);
+	gui.addSlider("BlendMode", mBlendMode, 0, 5);
 
-	gui.addSlider("globalWidth", globalWidth, 0.f, 10.f);
-	gui.addToggle("bFeather", bFeather);
-
-	gui.addSlider("feathering", feathering, 0.f, 10.f);
-	gui.addToggle("bTriangulation", bTriangulation);
-	gui.addToggle("bFeatherAtCore", bFeatherAtCore);
-	gui.addToggle("bFeatherAtCap", bFeatherAtCap);
-	gui.addToggle("exportFiles", exportFiles);
-	gui.addToggle("useFatline", useFatline);
+	gui.addToggle("ExportFiles", mExportFiles);
 
 	gui.addTitle("-- Debug --");
 	gui.addSlider("DebugThresh", gDebugThresh, 0.0f, 1.0f);
 	gui.addSlider("DebugImage", gDebugImage, 0.0f, 0.99999f);
+	gui.addButton("DebugRefresh", gDebugRefresh);
 }
 
 void CollageProblem::setup() {
@@ -113,17 +92,17 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 			image.width - rect.getRight() < 2 ||
 			rect.getTop() < 2 ||
 			image.height - rect.getBottom() < 2) {
-
 		}
 		else {
 			BlobInfo* info = new BlobInfo();
 			info->centroid = contourFinder.blobs[i].centroid;
 			info->line.addVertices(contourFinder.blobs[i].pts);
 			info->line.setClosed(true);
-			info->line.simplify(gTolerance);
-			info->line = info->line.getSmoothed(gSpacing, gSpacing);
-
-//			info->line.getResampledBySpacing(gSpacing);
+			if (gSpacing > 0) { 			
+				info->line = info->line.getResampledBySpacing(gSpacing);
+				info->line = info->line.getSmoothed((gSmoothing * gSmoothing) * info->line.size(), 1.f);
+			}
+ 			info->line.simplify();
 
 			tess.tessellateToMesh(info->line, OF_POLY_WINDING_ODD, info->mesh, true);
 
@@ -152,26 +131,19 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 			info->mesh.draw();
 			image.unbind();
 
-			if (useFatline) {
-				ofEnableBlendMode((ofBlendMode)blendMode);
-				ofSetColor(lineColor);
-				ofxFatLine fatline;
-				fatline.setCapType((ofxFatLineCapType)jointType);
-				fatline.setJointType((ofxFatLineJointType)capType);
-				fatline.setGlobalWidth(globalWidth);
-				fatline.setGlobalColor(lineColor);
-				fatline.enableFeathering(bFeather);
-				fatline.setFeather(0);
-				fatline.enableTriangulation(bTriangulation);
-				fatline.enableFeatherAtCore(bFeatherAtCore);
-				fatline.enableFeatherAtCap(bFeatherAtCap);
-
-				fatline.setFromPolyline(info->line);
-				fatline.draw();
-				fatline.setGlobalWidth(globalWidth * 2.f);
-				fatline.draw();
-				fatline.setGlobalWidth(globalWidth * 3.f);
-				fatline.draw();
+			if (mLineWidth > 0) {
+				ofEnableBlendMode((ofBlendMode)mBlendMode);
+				ofSetColor(mLineColor);
+				ofSetLineWidth(mLineWidth);
+				ofEnableSmoothing();
+				ofEnableAntiAliasing();
+				info->line.draw();
+				if (mUseFatline) {
+					ofSetLineWidth(mLineWidth * 2);
+					info->line.draw();
+					ofSetLineWidth(mLineWidth * 3);
+					info->line.draw();
+				}
 			}
 			ofPopMatrix();
 
@@ -182,7 +154,7 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 			workingImage.setFromPixels(pixResult);
 
 			static int index = 0;
-			if (exportFiles) {
+			if (mExportFiles) {
 				ofSaveImage(workingImage.getPixels(), "test/good_" + name + ofToString(index++) + " .png", OF_IMAGE_QUALITY_BEST);
 			}
 			info->texture = workingImage;
@@ -267,9 +239,9 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 	setts.height = height;
 	setts.internalformat = GL_RGB;
 
-	ofFbo mFbo;
-	mFbo.allocate(setts);
-	mFbo.begin();
+	ofFbo fbo;
+	fbo.allocate(setts);
+	fbo.begin();
 	ofClear(255,255,255,255);
 
 	ofSetColor(255);
@@ -299,41 +271,19 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 	}
 
 	// end draw
-	mFbo.end();
-	mFbo.readToPixels(pixResult);
+	fbo.end();
+	fbo.readToPixels(pixResult);
 }
 
 void CollageProblem::debugDraw() {
 	ImageCache& imgCache = mImages[gDebugImage * mImages.size()];
 
 	static float lastTresh = 0;
-	if (gDebugThresh != lastTresh) {
+	if (gDebugRefresh || gDebugThresh != lastTresh) {
 		imgCache.deleteBlobs();
 		imgCache.addBlobs(ofMap(gDebugThresh, 0.f, 1.f, gMinThresh, gMaxThresh));
 		lastTresh = gDebugThresh;
-
-		for (int i = 0; i < 10; ++i) {
-			line.addVertex(ofVec3f(ofRandom(10, 200), ofRandom(10, 200), 0));
-		}
 	}
-
-	ofEnableBlendMode((ofBlendMode)blendMode);
-	ofSetColor(lineColor);
-
-	fatline.clear();
-	fatline.setCapType((ofxFatLineCapType)jointType);
-	fatline.setJointType((ofxFatLineJointType)capType);
-	fatline.setGlobalWidth(globalWidth);
-	fatline.setGlobalColor(lineColor);
-	fatline.enableFeathering(bFeather);
-
-	fatline.setFeather(feathering);
-	fatline.enableTriangulation(bTriangulation);
-	fatline.enableFeatherAtCore(bFeatherAtCore);
-	fatline.enableFeatherAtCap(bFeatherAtCap);
-
-	fatline.setFromPolyline(line);
-	fatline.draw();
 
 	float scale = 1;
 	float x = 100;
@@ -346,12 +296,6 @@ void CollageProblem::debugDraw() {
 	for (int i = 0; i < imgCache.blobs.size(); ++i) {
 		ofImage& tex = imgCache.blobs[i]->texture;
 
-		x += tex.getWidth();
-		if (x > 1000) {
-			x = 0;
-			y += 200;
-		}
-
 		//		scale = scale * width / imgCache.image.getWidth();
 		ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 		ofSetColor(255, 255, 255);
@@ -361,9 +305,12 @@ void CollageProblem::debugDraw() {
 		ofScale(scale, scale, scale);
 		ofTranslate(-tex.width / 2, -tex.height / 2);
 		tex.draw(0, 0);
-
-		ofEnableBlendMode((ofBlendMode)blendMode);
-		ofSetColor(lineColor);
 		ofPopMatrix();
+
+		x += tex.getWidth();
+		if (x > 1000) {
+			x = 0;
+			y += 200;
+		}
 	}
 }

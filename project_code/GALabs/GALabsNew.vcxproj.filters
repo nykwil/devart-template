@@ -226,7 +226,10 @@
     <ClCompile Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxPolyline2Mesh.cpp">
       <Filter>addons\NewFilter2</Filter>
     </ClCompile>
-    <ClCompile Include="src\StrokeProblem.cpp" />
+    <ClCompile Include="src\StrokeProblem.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rbMath.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -837,7 +840,9 @@
     <ClInclude Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxPolyline2Mesh.h">
       <Filter>addons\NewFilter2</Filter>
     </ClInclude>
-    <ClInclude Include="src\TestProblem.h" />
+    <ClInclude Include="src\TestProblem.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />

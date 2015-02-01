@@ -5,26 +5,29 @@
 //#include "ofxFatLine.h"
 #include "ofEasyCam.h"
 #include "LineStrip.h"
-ofEasyCam mCam;
 
 // @TODO clear button
-// @TODO clean up variables in collage set reasonable defaults
 
-bool bRun = false;
-bool bDebug = false;
-bool bDrawAll = true;
-ofImage imgComp;
-ofImage imgWork;
-ofImage imgFinal;
-int width;
-int height;
+static ofEasyCam mCam;
+static bool bRun = false;
+static bool bDebug = false;
+static bool bDrawAll = true;
+static ofImage imgComp;
+static ofImage imgWork;
+static ofImage imgFinal;
+static int width;
+static int height;
 
-ofPixels pixResult;
-ofImage baseImage;
+static ofPixels pixResult;
+static ofImage baseImage;
 
-bool terrible = true;
+static bool terrible = false;
 
-
+static LineStrip strip;
+static int mWeiNum = 10;
+static float mWeiScale = 10.f;
+static float mWeiAdd = 1.f;
+static float mWeiNoise = 0.1f;
 
 //--------------------------------------------------------------
 void ofApp::update(){
@@ -71,60 +74,57 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 
-LineStrip strip;
-int mWeiNum = 10;
-float mWeiScale = 10.f;
-float mWeiAdd = 1.f;
-float mWeiNoise = 0.1f;
-
 void ofApp::setup() {
 
 	gui.addToggle("Run", bRun);
 	gui.addToggle("Debug", bDebug);
 	gui.addToggle("DrawAll", bDrawAll);
 
-	gui.addToggle("DrawMesh", strip.bDrawMesh);
-	gui.addToggle("DrawWire", strip.bDrawWire);
-	gui.addToggle("DrawLine", strip.bDrawLine);
-	gui.addToggle("DrawNormal", strip.bDrawNormal);
-	gui.addToggle("DrawTangeant", strip.bDrawTangeant);
-	gui.addToggle("DrawPoints", strip.bDrawPoints);
-	gui.addToggle("DrawOutline", strip.bDrawOutline);
-	gui.addToggle("DrawLinePoints", strip.bDrawLinePoints);
-	gui.addToggle("DrawOrigLine", strip.bDrawOrigLine);
-	gui.addSlider("DefaultWidth", strip.mDefaultWidth, 1.f, 100.f);
-	gui.addSlider("SmoothingSize", strip.mSmoothingSize, 0.f, 1.f);
-	gui.addSlider("Spacing", strip.mSpacing, 0, 100.f);
-	gui.addSlider("SmoothingShape", strip.mSmoothingShape, 0.f, 1.f);
-	gui.addSlider("OutSmoothingSize", strip.mOutSmoothingSize, 0.f, 1.f);
-	gui.addSlider("OutSpacing", strip.mOutSpacing, 0, 100.f);
-	gui.addSlider("AngStep", strip.mAngStep, 0.01f, TWO_PI);
-	gui.addSlider("WeiNum", mWeiNum, 3, 30);
-	gui.addSlider("WeiScale", mWeiScale, 0.f, 100.f);
-	gui.addSlider("WeiAdd", mWeiAdd, 0.f, 2.f);
-	gui.addSlider("WeiNoise ", mWeiNoise , 0.001f, 2.f);
-
 	ofSetFrameRate(30);
 
 	if (terrible) {
+		gui.addToggle("DrawMesh", strip.bDrawMesh);
+		gui.addToggle("DrawWire", strip.bDrawWire);
+		gui.addToggle("DrawLine", strip.bDrawLine);
+		gui.addToggle("DrawNormal", strip.bDrawNormal);
+		gui.addToggle("DrawTangeant", strip.bDrawTangeant);
+		gui.addToggle("DrawPoints", strip.bDrawPoints);
+		gui.addToggle("DrawOutline", strip.bDrawOutline);
+		gui.addToggle("DrawLinePoints", strip.bDrawLinePoints);
+		gui.addToggle("DrawOrigLine", strip.bDrawOrigLine);
+		gui.addSlider("DefaultWidth", strip.mDefaultWidth, 1.f, 100.f);
+		gui.addSlider("SmoothingSize", strip.mSmoothingSize, 0.f, 1.f);
+		gui.addSlider("Spacing", strip.mSpacing, 0, 100.f);
+		gui.addSlider("SmoothingShape", strip.mSmoothingShape, 0.f, 1.f);
+		gui.addSlider("OutSmoothingSize", strip.mOutSmoothingSize, 0.f, 1.f);
+		gui.addSlider("OutSpacing", strip.mOutSpacing, 0, 100.f);
+		gui.addSlider("AngStep", strip.mAngStep, 0.01f, TWO_PI);
+		gui.addSlider("WeiNum", mWeiNum, 3, 30);
+		gui.addSlider("WeiScale", mWeiScale, 0.f, 100.f);
+		gui.addSlider("WeiAdd", mWeiAdd, 0.f, 2.f);
+		gui.addSlider("WeiNoise ", mWeiNoise , 0.001f, 2.f);
+
 		strip.addVertex(ofVec3f(100, 500, 0));
 		strip.addVertex(ofVec3f(300, 100, 0));
 		strip.addVertex(ofVec3f(600, 400, 0));
 		strip.addVertex(ofVec3f(800, 150, 0));
 	}
 	else {
-		//	mDna = new CollageProblem();
-		mDna = new StripProblem();
+		mDna = new CollageProblem();
+		// mDna = new StripProblem();
+	}
+
+	gui.setup();
+	gui.loadFromXML();
+	gui.setDefaultKeys(true);
+
+	if (!terrible) {
 		mDna->setup();
 		width = mDna->mWorkingWidth;
 		height = mDna->mWorkingHeight;
 
 		ofSetWindowShape(width * 2, height * 2);
 	}
-
-	gui.setup();
-	gui.loadFromXML();
-	gui.setDefaultKeys(true);
 }
 
 void ofApp::draw() {
@@ -157,10 +157,10 @@ void ofApp::draw() {
 		baseImage.draw(0,0);
 	}
 	else if (terrible) {
-		//mCam.begin();
-		//ofEnableDepthTest();
+		mCam.begin();
+		ofEnableDepthTest();
 		strip.draw();
-		//mCam.end();
+		mCam.end();
 	}
 	else {
 		if (bRun && !mDna->isThreadRunning()) {
@@ -225,13 +225,15 @@ void ofApp::keyPressed(int key) {
 			strip.addVertex(ofVec3f(ofRandom(50, 800), ofRandom(50, 800), 0));
 		}
 	}
-
 	else if (key == 'o') {
 		strip.mWeight.clear();
 		float f = ofRandom(1.f);
 		for (int i = 0; i < mWeiNum; ++i) {
 			strip.mWeight.push_back((mWeiAdd + ofRandom(1.f)) * mWeiScale);
 		}
+	}
+	else if (key == 'i') {
+		mCam.setVFlip(!mCam.isVFlipped());
 	}
 }
 

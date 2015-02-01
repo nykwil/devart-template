@@ -161,6 +161,7 @@
     <ClCompile Include="..\..\..\addons\ofxOpenCv\src\ofxCvHaarFinder.cpp" />
     <ClCompile Include="..\..\..\addons\ofxOpenCv\src\ofxCvImage.cpp" />
     <ClCompile Include="..\..\..\addons\ofxOpenCv\src\ofxCvShortImage.cpp" />
+    <ClCompile Include="src\rbMath.cpp" />
     <ClCompile Include="src\StripProblem.cpp" />
     <ClCompile Include="src\StrokeProblem.cpp" />
     <ClCompile Include="src\TestProblem.cpp" />

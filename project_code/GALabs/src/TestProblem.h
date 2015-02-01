@@ -32,8 +32,6 @@ public:
 	virtual void setup();
     virtual void setRanges();
     virtual void createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height);
-	Drawer mDraw;
-	ofImage mBrush[2];
 };
 
 class BlobInfo {

@@ -4,10 +4,10 @@
 #include "ofxSimpleGuiToo.h"
 #include "ColorLook.h"
 
-float gMinLineWidth = 0.f;
-float gMaxLineWidth = 20.f;
-float gMinAlpha = 0.f;
-float gMaxAlpha = 120.f;
+static float gMinLineWidth = 0.f;
+static float gMaxLineWidth = 20.f;
+static float gMinAlpha = 0.f;
+static float gMaxAlpha = 120.f;
 
 enum StripRangeType {
 	RT_X,
@@ -61,8 +61,7 @@ void StripProblem::createPixels(ofPixelsRef pixels, const vector<float>& values,
 	baseImage.draw(0, 0);
 
 	int i = 0;
-	for (int is = 0; is < mRepeat; ++is)
-	{
+	for (int is = 0; is < mRepeat; ++is) {
 		float x = values[is * RT_MAX + RT_X] * width;
 		float y = values[is * RT_MAX + RT_Y] * height;
 		float ang = values[is * RT_MAX + RT_ANG];

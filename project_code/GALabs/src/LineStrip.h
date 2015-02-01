@@ -1,4 +1,6 @@
 #pragma once
+#include "rbmath.h"
+
 class LineStrip
 {
 public:
