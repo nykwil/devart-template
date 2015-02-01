@@ -33,8 +33,7 @@ float myMap01(float value, float outputMin, float outputMax, bool clamp) {
 }
 
 GAProblem::GAProblem() {
-	rootDir = ofToDataPath("");
-
+	mRootDir = ofToDataPath("");
 	mCompMethod = 5;
 	mUseDna = true;
 	bFlattenAndSave = true;
@@ -42,8 +41,7 @@ GAProblem::GAProblem() {
 	mPopSize = 10;
 	mNGen = 10;
 
-	mCompareWidth = 200;
-	mCompareHeight = 200;
+	mCompareWidth = 100;
 	mRepeat = 1;
 	mWorkingWidth = 600;
 	mLevels = 0;
@@ -60,7 +58,7 @@ GAProblem::GAProblem() {
 void GAProblem::setup() {
 
 	{
-		ofDirectory dir(rootDir + "target/");
+		ofDirectory dir(mRootDir + "/target/");
 		dir.allowExt("jpg");
 		int nd = dir.listDir();
 		mImgOrig.loadImage(dir.getPath(rand() % nd));
@@ -73,19 +71,21 @@ void GAProblem::setup() {
 	mFinalHeight = mWorkingHeight * 4;
 
 	mImgCompare = mImgOrig;
+
+	mCompareHeight = mCompareWidth / (mImgOrig.getWidth() / mImgOrig.getHeight());
 	mImgCompare.resize(mCompareWidth, mCompareHeight);
 	ColorLook::instance().buildPalette(mImgCompare);
 
 	ofImage img;
 	{
-		ofDirectory dir(rootDir + "output/");
+		ofDirectory dir(mRootDir + "/output/");
 		dir.allowExt("png");
 		mLevels = dir.listDir();
 		if (mLevels > 0) {
-			img.loadImage(rootDir + "output/outimg" + ofToString(mLevels, 2, 5, '0') + ".png");
+			img.loadImage(mRootDir + "/output/outimg" + ofToString(mLevels, 2, 5, '0') + ".png");
 		}
 		else {
-			ofFile file(rootDir + "empty.jpg");
+			ofFile file(mRootDir + "/empty.jpg");
 			if (file.exists()) {
 				img.loadImage(ofToDataPath("empty.jpg"));
 			}
@@ -292,7 +292,7 @@ void GAProblem::go() {
 
 	if (bFlattenAndSave) {
 		while (mFinalLayers.size() > 1) {
-			string s = rootDir + "output/outimg" + ofToString(++mLevels, 2, 5, '0');
+			string s = mRootDir + "/output/outimg" + ofToString(++mLevels, 2, 5, '0');
 			ofSaveImage(mFinalLayers.front(), s + ".png", OF_IMAGE_QUALITY_BEST);
 			mFinalLayers.pop_front();
 

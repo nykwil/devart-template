@@ -3,14 +3,14 @@
 #include "ofAppGlutWindow.h"
 
 //========================================================================
-int main( ){
+int main(int argc, char* argv[]){
 
     ofAppGlutWindow window;
-	ofSetupOpenGL(&window, 800, 800, OF_WINDOW);			// <-------- setup the GL context
-
-	// this kicks off the running of my app
-	// can be OF_WINDOW or OF_FULLSCREEN
-	// pass in width and height too:
-	ofRunApp(new ofApp());
-
+	ofSetupOpenGL(&window, 800, 800, OF_WINDOW);
+	vector<string> args;
+	for (int i = 0; i < argc; ++i) {
+		args.push_back(argv[i]);
+	}
+	ofApp* app = new ofApp(args);
+	ofRunApp(app);
 }

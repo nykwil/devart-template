@@ -5,6 +5,7 @@
 
 class ofApp : public ofBaseApp{
 public:
+	ofApp(const std::vector<std::string>& args);
 	void setup();
 	void update();
 	void draw();

@@ -61,7 +61,7 @@ public:
 	}
 
 	void update() {
-		//bUpdate = false;
+		bUpdate = false;
 		mOutLine.clear();
 		mMesh.clear();
 
@@ -69,62 +69,66 @@ public:
 			mLine = mOrigLine;
 			if (mSpacing > 0.01f) {
 				mLine = mLine.getResampledBySpacing(mSpacing);
+				mLine = mLine.getSmoothed(mSmoothingSize * mLine.size(), mSmoothingShape);
 			}
-			mLine = mLine.getSmoothed(mSmoothingSize * mLine.size(), mSmoothingShape);
-
-			int i = 0;
-			float ang1 = getAng(-tangAtIndex(mLine, i));
-			float ang2 = PI + ang1 - 0.01f;
-			float diff = PI - 0.01f;
-			buildCurve(i, weightAtIndex(mLine, i), diff, ang1, ang2, 0.5f);
-
-			for (i = 1; i < mLine.size() - 1; ++i) {
-				// buildSide(i, 1);
-				buildSimple(i, 1);
-			}
-
-			i = mLine.size() - 1;
-			ang1 = getAng(tangAtIndex(mLine, i));
-			ang2 = PI + ang1 - 0.01f;
-			diff = PI - 0.01f;
-			buildCurve(i, weightAtIndex(mLine, i), diff, ang1, ang2, 0.5f);
-
-			for (i = mLine.size() - 2; i >= 1; --i) {
-				// buildSide(i, -1);
-				buildSimple(i, -1);
-			}
-			i = 0;
-			mOutLine.addVertex(mLine[i] + -tangAtIndex(mLine, i) * weightAtIndex(mLine, i));
+			mLine.getArea();
+			buildOutline(mLine);
 		}
 
 		mOutLine.close();
 		if (mOutSpacing > 0.01f) {
 			mOutLine = mOutLine.getResampledBySpacing(mOutSpacing);
+			mOutLine = mOutLine.getSmoothed(mOutSmoothingSize * mOutLine.size(), mSmoothingShape);
 		}
-		mOutLine = mOutLine.getSmoothed(mOutSmoothingSize * mOutLine.size(), mSmoothingShape);
 
 		mOutLine.simplify();
 		mTess.tessellateToMesh(mOutLine, OF_POLY_WINDING_NONZERO, mMesh);
 	}
 
-	void buildSide(int i, float sign) {
-		float w = weightAtIndex(mLine, i);
-		ofVec2f v1 = tangAtIndex(mLine, i - 1) * sign;
-		ofVec2f v2 = tangAtIndex(mLine, i) * sign;
+	void buildOutline(const ofPolyline& line) {
+		int i = 0;
+		float ang1 = getAng(-tangAtIndex(line, i));
+		float ang2 = PI + ang1 - 0.01f;
+		float diff = PI - 0.01f;
+		buildCurve(line, i, weightAtIndex(line, i), diff, ang1, ang2, 0.5f);
+
+		for (i = 1; i < line.size() - 1; ++i) {
+			// buildSide(i, 1);
+			buildSimple(line, i, 1);
+		}
+
+		i = line.size() - 1;
+		ang1 = getAng(tangAtIndex(line, i));
+		ang2 = PI + ang1 - 0.01f;
+		diff = PI - 0.01f;
+		buildCurve(line, i, weightAtIndex(line, i), diff, ang1, ang2, 0.5f);
+
+		for (i = line.size() - 2; i >= 1; --i){ 
+			// buildSide(i, -1);
+			buildSimple(line, i, -1);
+		}
+		i = 0;
+		mOutLine.addVertex(line[i] + -tangAtIndex(line, i) * weightAtIndex(line, i));
+	}
+
+	void buildSide(const ofPolyline& line, int i, float sign) {
+		float w = weightAtIndex(line, i);
+		ofVec2f v1 = tangAtIndex(line, i - 1) * sign;
+		ofVec2f v2 = tangAtIndex(line, i) * sign;
 		float ang1 = getAng(v1);
 		float ang2 = getAng(v2);
 		float diff = ofAngleDifferenceRadians(ang2, ang1);
 		if (diff > 0) {
-			buildCurve(i, w, diff, ang1, ang2, mAngStep);
+			buildCurve(line, i, w, diff, ang1, ang2, mAngStep);
 		}
 		else {
 			Segment S1;
 			Segment S2;
-			S1.P0 = mLine[i - 1] + v1 * weightAtIndex(mLine, i - 1);
-			S1.P1 = mLine[i] + v1 * weightAtIndex(mLine, i);
+			S1.P0 = line[i - 1] + v1 * weightAtIndex(line, i - 1);
+			S1.P1 = line[i] + v1 * weightAtIndex(line, i);
 
-			S2.P0 = mLine[i] + v2 * weightAtIndex(mLine, i);
-			S2.P1 = mLine[i + 1] + v2 * weightAtIndex(mLine, i + 1);
+			S2.P0 = line[i] + v2 * weightAtIndex(line, i);
+			S2.P1 = line[i + 1] + v2 * weightAtIndex(line, i + 1);
 
 			ofVec2f I0;
 			ofVec2f I1;
@@ -133,24 +137,24 @@ public:
 				mOutLine.addVertex(ofVec3f(I0));
 			}
 			else {
-				mOutLine.addVertex(mLine[i] + mLine.getNormalAtIndex(i) * sign * weightAtIndex(mLine, i));
+				mOutLine.addVertex(line[i] + line.getNormalAtIndex(i) * sign * weightAtIndex(line, i));
 			}
 		}
 	}
 
-	void buildSimple(int i, float sign) {
-		mOutLine.addVertex(mLine[i] + mLine.getNormalAtIndex(i) * sign * weightAtIndex(mLine, i));
+	void buildSimple(const ofPolyline& line, int i, float sign) {
+		mOutLine.addVertex(line[i] + mLine.getNormalAtIndex(i) * sign * weightAtIndex(line, i));
 	}
 
-	void buildCurve(int i, float w, float diff, float ang1, float ang2, float step) {
-		mOutLine.addVertex(mLine[i] + getVec(ang1) * w);
+	void buildCurve(const ofPolyline& line, int i, float w, float diff, float ang1, float ang2, float step) {
+		mOutLine.addVertex(line[i] + getVec(ang1) * w);
 		for (float f = ang1 - step; f > ang1 - diff; f -= step) {
-			mOutLine.addVertex(mLine[i] + getVec(f) * w);
+			mOutLine.addVertex(line[i] + getVec(f) * w);
 		}
-		mOutLine.addVertex(mLine[i] + getVec(ang2) * w);
+		mOutLine.addVertex(line[i] + getVec(ang2) * w);
 	}
 
-	ofVec3f tangAtIndex(ofPolyline& line, int i) {
+	ofVec3f tangAtIndex(const ofPolyline& line, int i) {
 		if (i >= line.size() - 1) {
 			ofVec3f tang = line.getRightVector().getCrossed(line[i] - line[i - 1]);
 			return tang.normalized();
@@ -161,7 +165,7 @@ public:
 		}
 	}
 
-	float weightAtIndex(ofPolyline& line, int i) {
+	float weightAtIndex(const ofPolyline& line, int i) {
 		if (mWeight.size() == 0) {
 			return mDefaultWidth;
 		}

@@ -11,7 +11,7 @@ class GAProblem : public ofThread
 {
 public:
     GAProblem();
-	string rootDir;
+	string mRootDir;
 	void pickBest(ofImage& mImg1, ofImage& mImg2);
 	float fitnessTest(const vector<float>& values);
 

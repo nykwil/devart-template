@@ -74,6 +74,15 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 
+string rootDir;
+string algorithm;
+
+ofApp::ofApp( const std::vector<std::string>& args )
+{
+	algorithm = args.size() > 1 ? args[1] : "";
+	rootDir = args.size() > 2 ? args[2] : "";
+}
+
 void ofApp::setup() {
 
 	gui.addToggle("Run", bRun);
@@ -110,8 +119,15 @@ void ofApp::setup() {
 		strip.addVertex(ofVec3f(800, 150, 0));
 	}
 	else {
-		mDna = new CollageProblem();
-		// mDna = new StripProblem();
+		if (algorithm == "collage") {
+			mDna = new CollageProblem();
+		}
+		else if (algorithm == "strip") {
+			mDna = new StripProblem();
+		}
+		else {
+			mDna = new StrokeProblem();
+		}
 	}
 
 	gui.setup();
@@ -119,6 +135,7 @@ void ofApp::setup() {
 	gui.setDefaultKeys(true);
 
 	if (!terrible) {
+		mDna->mRootDir = ofToDataPath(rootDir);
 		mDna->setup();
 		width = mDna->mWorkingWidth;
 		height = mDna->mWorkingHeight;

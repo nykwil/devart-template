@@ -11,6 +11,8 @@ float StrokeProblem::gMinSize = 5;
 float StrokeProblem::gMaxSize = 5;
 float StrokeProblem::gRotation = 1;
 
+const int NUM_POINTS = 5;
+
 static LineStrip strip;
 static int mWeiNum = 10;
 static float mWeiScale = 10.f;
@@ -18,6 +20,7 @@ static float mWeiAdd = 1.f;
 static float mWeiNoise = 0.1f;
 
 StrokeProblem::StrokeProblem() : GAProblem() {
+	gui.addPage("Stroke");
 	gui.addToggle("DrawMesh", strip.bDrawMesh);
 	gui.addToggle("DrawWire", strip.bDrawWire);
 	gui.addToggle("DrawLine", strip.bDrawLine);
@@ -48,8 +51,9 @@ void StrokeProblem::setRanges() {
 	mRanges.clear();
 	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // col
 	mRanges.push_back(RangeInfo(4, 0, 1.f)); // size
+	mRanges.push_back(RangeInfo(1, 0, 1.f)); // blend
 
-	for (int in = 0; in < 5; ++in) {
+	for (int in = 0; in < NUM_POINTS; ++in) {
 		mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // x
 		mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // y
 	}
@@ -78,18 +82,30 @@ void StrokeProblem::createPixels(ofPixelsRef pixels, const vector<float>& values
 	int i = 0;
 	for (int is = 0; is < mRepeat; ++is) {
 		strip.clear();
-		ofFloatColor col = ColorLook::instance().getPalette(values[i++]);
-		float sz = ofLerp(gMinSize, gMaxSize, values[i++]) * mWorkingWidth;
-		for (int in = 0; in < 5; ++in) {
+		strip.mFillColor = ColorLook::instance().getPalette(values[i++]); // COL
+		float sz = ofLerp(gMinSize, gMaxSize, values[i++]) * mWorkingWidth; // SIZE
+		int blend = (int)(values[i++] * 3); // BLEND
+		for (int in = 0; in < NUM_POINTS; ++in) {
 			strip.addVertex(ofVec3f(values[i++] * mWorkingWidth, values[i++] * mWorkingHeight, 0));		
 		}
 		
+		if (blend == 0) {
+			ofBlendMode(OF_BLENDMODE_ADD);
+		}
+		else if (blend == 1) {
+			ofBlendMode(OF_BLENDMODE_SUBTRACT);
+		}
+		else if (blend == 2) {
+			ofBlendMode(OF_BLENDMODE_ALPHA);
+		}
+		else if (blend == 3) {
+			ofBlendMode(OF_BLENDMODE_SCREEN);
+		}
+
 		strip.mWeight.clear();
-		float f = ofRandom(1.f);
 		for (int i = 0; i < mWeiNum; ++i) {
 			strip.mWeight.push_back((mWeiAdd + ofRandom(1.f)) * mWeiScale);
 		}
-		ofSetColor(col);
 		strip.draw();
 	}
 

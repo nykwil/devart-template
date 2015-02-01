@@ -64,7 +64,7 @@ CollageProblem::CollageProblem() : GAProblem() {
 void CollageProblem::setup() {
 	GAProblem::setup();
 
-	ofDirectory dir(rootDir + "source/");
+	ofDirectory dir(mRootDir + "/source/");
 	dir.allowExt("jpg");
 	int nd = dir.listDir();
 
@@ -88,30 +88,30 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 	for(int i = 0; i < contourFinder.blobs.size(); i++) {
 		ofRectangle& rect = contourFinder.blobs[i].boundingRect;
 
-		if (rect.getLeft() < 2 || 
+		bool onEdge = rect.getLeft() < 2 || 
 			image.width - rect.getRight() < 2 ||
 			rect.getTop() < 2 ||
-			image.height - rect.getBottom() < 2) {
-		}
-		else {
-			BlobInfo* info = new BlobInfo();
-			info->centroid = contourFinder.blobs[i].centroid;
-			info->line.addVertices(contourFinder.blobs[i].pts);
-			info->line.setClosed(true);
+			image.height - rect.getBottom() < 2;
+
+		if (mExportFiles || !onEdge) {
+			ofPolyline line;
+			line.addVertices(contourFinder.blobs[i].pts);
+			line.setClosed(true);
 			if (gSpacing > 0) { 			
-				info->line = info->line.getResampledBySpacing(gSpacing);
-				info->line = info->line.getSmoothed((gSmoothing * gSmoothing) * info->line.size(), 1.f);
+				line = line.getResampledBySpacing(gSpacing);
+				line = line.getSmoothed((gSmoothing * gSmoothing) * line.size(), 1.f);
 			}
- 			info->line.simplify();
+ 			line.simplify();
 
-			tess.tessellateToMesh(info->line, OF_POLY_WINDING_ODD, info->mesh, true);
+			ofVboMesh mesh;
+			tess.tessellateToMesh(line, OF_POLY_WINDING_ODD, mesh, true);
 
-			vector<ofVec3f>& verts = info->mesh.getVertices();
+			vector<ofVec3f>& verts = mesh.getVertices();
 			for (int i = 0; i < verts.size(); ++i) {
-				info->mesh.addTexCoord(ofVec2f(verts[i].x, verts[i].y));
+				mesh.addTexCoord(ofVec2f(verts[i].x, verts[i].y));
 			}
-			info->mesh.disableColors();
-			info->mesh.disableNormals();
+			mesh.disableColors();
+			mesh.disableNormals();
 
 			ofFbo fbo;
 			ofPixels pixResult;
@@ -128,7 +128,7 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 			ofPushMatrix();
 			ofTranslate(-rect.x, -rect.y);
 			image.bind();
-			info->mesh.draw();
+			mesh.draw();
 			image.unbind();
 
 			if (mLineWidth > 0) {
@@ -137,12 +137,12 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 				ofSetLineWidth(mLineWidth);
 				ofEnableSmoothing();
 				ofEnableAntiAliasing();
-				info->line.draw();
+				line.draw();
 				if (mUseFatline) {
 					ofSetLineWidth(mLineWidth * 2);
-					info->line.draw();
+					line.draw();
 					ofSetLineWidth(mLineWidth * 3);
-					info->line.draw();
+					line.draw();
 				}
 			}
 			ofPopMatrix();
@@ -155,12 +155,22 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 
 			static int index = 0;
 			if (mExportFiles) {
-				ofSaveImage(workingImage.getPixels(), "test/good_" + name + ofToString(index++) + " .png", OF_IMAGE_QUALITY_BEST);
+				if (onEdge) {
+					ofSaveImage(workingImage.getPixels(), "debug/bad_" + name + ofToString(index++) + " .png", OF_IMAGE_QUALITY_BEST);
+				}
+				else {
+					ofSaveImage(workingImage.getPixels(), "debug/good_" + name + ofToString(index++) + " .png", OF_IMAGE_QUALITY_BEST);
+				}
 			}
-			info->texture = workingImage;
-			blobs.push_back(info);
+			if (!onEdge) {
+				BlobInfo* info = new BlobInfo();
+				info->line = line;
+				info->centroid = contourFinder.blobs[i].centroid;
+				info->mesh = mesh;
+				info->texture = workingImage;
+				blobs.push_back(info);
+			}
 		}
-
 		printf("%d / %d\n", i + 1, contourFinder.blobs.size());
 	}
 	sort(blobs.begin(), blobs.end(), blobSort);
