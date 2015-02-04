@@ -21,6 +21,16 @@ public:
 	float mOutSpacing;
 	float mOutSmoothingSize;
 
+	bool bDrawMesh;
+	bool bDrawWire;
+	bool bDrawOrigLine;
+	bool bDrawLine;
+	bool bDrawLinePoints;
+	bool bDrawNormal;
+	bool bDrawTangeant;
+	bool bDrawPoints;
+	bool bDrawOutline;
+
 	LineStrip() {
 		mAngStep = 1.f;
 		mDefaultWidth = 50.f;
@@ -183,16 +193,6 @@ public:
 			return ofLerp(mWeight[ifv], mWeight[ifv + 1], ffv);
 		}
 	}
-
-	bool bDrawMesh;
-	bool bDrawWire;
-	bool bDrawOrigLine;
-	bool bDrawLine;
-	bool bDrawLinePoints;
-	bool bDrawNormal;
-	bool bDrawTangeant;
-	bool bDrawPoints;
-	bool bDrawOutline;
 
 	void draw() {
 		if (bUpdate) {

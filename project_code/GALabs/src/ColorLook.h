@@ -5,22 +5,28 @@
 class ColorLook
 {
 public:
+	static const int maxval = 40;
+
 	static unsigned int getIndex(unsigned char r, unsigned char g, unsigned char b) {
-		return (r >> 3 << (5 * 2)) | (g >> 3 << 5) | b;
+		int nr = static_cast<unsigned int>(static_cast<float>(r) / 255.f * static_cast<float>(maxval - 0.001f));
+		int ng = static_cast<unsigned int>(static_cast<float>(g) / 255.f * static_cast<float>(maxval - 0.001f));
+		int nb = static_cast<unsigned int>(static_cast<float>(b) / 255.f * static_cast<float>(maxval - 0.001f));
+		int total = (nr * maxval * maxval) + (ng * maxval) + nb;
+		return total;
+	}
+
+	static ofColor getColor(unsigned int index) {
+		int nr = index / (maxval * maxval);
+		index -= nr * maxval * maxval;
+		int ng = index / maxval;
+		index -= ng * maxval;
+		int nb = index;
+		return ofColor(static_cast<float>(nr) / maxval * 255.f, static_cast<float>(ng) / maxval * 255.f, static_cast<float>(nb) / maxval * 255.f);
 	}
 
 	static ColorLook& instance();
 
 	ColorLook();
-
-	static ofColor getColor(unsigned int index) {
-		int r = index >> (5 * 2) << 3;
-		index -= r << (5 * 2);
-		int g = index >> 5 << 3;
-		index -= g << 5;
-		int b = index << 3;
-		return ofColor(r, g, b);
-	}
 
 	int getSize() {
 		return palette.size();

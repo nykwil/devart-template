@@ -229,7 +229,9 @@
     <ClCompile Include="src\StrokeProblem.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\rbMath.cpp" />
+    <ClCompile Include="src\rbMath.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

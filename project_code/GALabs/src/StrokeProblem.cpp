@@ -51,7 +51,8 @@ void StrokeProblem::setRanges() {
 	mRanges.clear();
 	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // col
 	mRanges.push_back(RangeInfo(4, 0, 1.f)); // size
-	mRanges.push_back(RangeInfo(1, 0, 1.f)); // blend
+	mRanges.push_back(RangeInfo(4, 0, 1.f)); // blend
+	mRanges.push_back(RangeInfo(4, 0, 1.f)); // alpha
 
 	for (int in = 0; in < NUM_POINTS; ++in) {
 		mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // x
@@ -83,10 +84,12 @@ void StrokeProblem::createPixels(ofPixelsRef pixels, const vector<float>& values
 	for (int is = 0; is < mRepeat; ++is) {
 		strip.clear();
 		strip.mFillColor = ColorLook::instance().getPalette(values[i++]); // COL
-		float sz = ofLerp(gMinSize, gMaxSize, values[i++]) * mWorkingWidth; // SIZE
+		float sz = ofLerp(gMinSize, gMaxSize, values[i++]) * width; // SIZE
 		int blend = (int)(values[i++] * 3); // BLEND
+		strip.mFillColor.a = (int)(values[i++] * 255);
+
 		for (int in = 0; in < NUM_POINTS; ++in) {
-			strip.addVertex(ofVec3f(values[i++] * mWorkingWidth, values[i++] * mWorkingHeight, 0));		
+			strip.addVertex(ofVec3f(values[i++] * width, values[i++] * height, 0));		
 		}
 		
 		if (blend == 0) {
@@ -104,7 +107,7 @@ void StrokeProblem::createPixels(ofPixelsRef pixels, const vector<float>& values
 
 		strip.mWeight.clear();
 		for (int i = 0; i < mWeiNum; ++i) {
-			strip.mWeight.push_back((mWeiAdd + ofRandom(1.f)) * mWeiScale);
+			strip.mWeight.push_back((mWeiAdd + ofRandom(1.f)) * mWeiScale * (width / 600.f));
 		}
 		strip.draw();
 	}

@@ -48,10 +48,10 @@ GAProblem::GAProblem() {
 
 	gui.addSlider("CompMethod", mCompMethod, 0, 9);
 	gui.addToggle("UseDna", mUseDna);
-	gui.addSlider("Times", mTimes, 0, 200);
+	gui.addSlider("Times", mTimes, 0, 50);
 	gui.addSlider("Repeat", mRepeat, 0, 100);
-	gui.addSlider("PopSize", mPopSize, 0, 500);
-	gui.addSlider("NGen", mNGen, 0, 500);
+	gui.addSlider("PopSize", mPopSize, 0, 200);
+	gui.addSlider("NGen", mNGen, 0, 200);
 	gui.addToggle("FlattenAndSave", bFlattenAndSave);
 }
 
@@ -74,9 +74,17 @@ void GAProblem::setup() {
 
 	mCompareHeight = mCompareWidth / (mImgOrig.getWidth() / mImgOrig.getHeight());
 	mImgCompare.resize(mCompareWidth, mCompareHeight);
-	ColorLook::instance().buildPalette(mImgCompare);
 
 	ofImage img;
+	ofFile file(mRootDir + "/palette.jpg");
+	if (file.exists()) {
+		img.loadImage(mRootDir + "/palette.jpg");
+		ColorLook::instance().buildPalette(img);
+	}
+	else {
+		ColorLook::instance().buildPalette(mImgCompare);
+	}
+
 	{
 		ofDirectory dir(mRootDir + "/output/");
 		dir.allowExt("png");
@@ -87,7 +95,7 @@ void GAProblem::setup() {
 		else {
 			ofFile file(mRootDir + "/empty.jpg");
 			if (file.exists()) {
-				img.loadImage(ofToDataPath("empty.jpg"));
+				img.loadImage(mRootDir + "/empty.jpg");
 			}
 			else {
 				img = mImgOrig;

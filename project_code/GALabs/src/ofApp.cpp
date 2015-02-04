@@ -5,6 +5,7 @@
 //#include "ofxFatLine.h"
 #include "ofEasyCam.h"
 #include "LineStrip.h"
+#include "ColorLook.h"
 
 // @TODO clear button
 
@@ -28,6 +29,9 @@ static int mWeiNum = 10;
 static float mWeiScale = 10.f;
 static float mWeiAdd = 1.f;
 static float mWeiNoise = 0.1f;
+
+static string rootDir;
+static string algorithm;
 
 //--------------------------------------------------------------
 void ofApp::update(){
@@ -74,10 +78,7 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 
-string rootDir;
-string algorithm;
-
-ofApp::ofApp( const std::vector<std::string>& args )
+ofApp::ofApp(const std::vector<std::string>& args)
 {
 	algorithm = args.size() > 1 ? args[1] : "";
 	rootDir = args.size() > 2 ? args[2] : "";
