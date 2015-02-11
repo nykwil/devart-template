@@ -215,7 +215,6 @@ void ofApp::draw() {
 					imgFinal.draw(0, 0, mDna->mFinalWidth, mDna->mFinalHeight);
 				}	
 			}
-
 		}
 		else if (bDebug) {
 			ofBackground(50);

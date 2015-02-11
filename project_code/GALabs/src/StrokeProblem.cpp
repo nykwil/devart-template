@@ -15,7 +15,6 @@ const int NUM_POINTS = 5;
 
 static LineStrip strip;
 static int mWeiNum = 10;
-static float mWeiScale = 10.f;
 static float mWeiAdd = 1.f;
 static float mWeiNoise = 0.1f;
 
@@ -38,7 +37,8 @@ StrokeProblem::StrokeProblem() : GAProblem() {
 	gui.addSlider("OutSpacing", strip.mOutSpacing, 0, 100.f);
 	gui.addSlider("AngStep", strip.mAngStep, 0.01f, TWO_PI);
 	gui.addSlider("WeiNum", mWeiNum, 3, 30);
-	gui.addSlider("WeiScale", mWeiScale, 0.f, 100.f);
+	gui.addSlider("MinSize", gMinSize, 0.f, 100.f);
+	gui.addSlider("MaxSize", gMaxSize, 0.f, 100.f);
 	gui.addSlider("WeiAdd", mWeiAdd, 0.f, 2.f);
 	gui.addSlider("WeiNoise ", mWeiNoise , 0.001f, 2.f);
 }
@@ -51,6 +51,7 @@ void StrokeProblem::setRanges() {
 	mRanges.clear();
 	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // col
 	mRanges.push_back(RangeInfo(4, 0, 1.f)); // size
+	mRanges.push_back(RangeInfo(4, 0, 1.f)); // add
 	mRanges.push_back(RangeInfo(4, 0, 1.f)); // blend
 	mRanges.push_back(RangeInfo(4, 0, 1.f)); // alpha
 
@@ -85,6 +86,7 @@ void StrokeProblem::createPixels(ofPixelsRef pixels, const vector<float>& values
 		strip.clear();
 		strip.mFillColor = ColorLook::instance().getPalette(values[i++]); // COL
 		float sz = ofLerp(gMinSize, gMaxSize, values[i++]) * width; // SIZE
+		int seed = (int)(values[i++] * 10000.f);
 		int blend = (int)(values[i++] * 3); // BLEND
 		strip.mFillColor.a = (int)(values[i++] * 255);
 
@@ -106,8 +108,9 @@ void StrokeProblem::createPixels(ofPixelsRef pixels, const vector<float>& values
 		}
 
 		strip.mWeight.clear();
+		ofSeedRandom(seed);
 		for (int i = 0; i < mWeiNum; ++i) {
-			strip.mWeight.push_back((mWeiAdd + ofRandom(1.f)) * mWeiScale * (width / 600.f));
+			strip.mWeight.push_back((mWeiAdd + ofRandom(1.f)) * sz * (width / 600.f));
 		}
 		strip.draw();
 	}
