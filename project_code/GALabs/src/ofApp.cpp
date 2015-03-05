@@ -81,7 +81,7 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 ofApp::ofApp(const std::vector<std::string>& args)
 {
 	algorithm = args.size() > 1 ? args[1] : "";
-	rootDir = args.size() > 2 ? args[2] : "";
+	rootDir = args.size() > 2 ? args[2] : "cats";
 }
 
 void ofApp::setup() {

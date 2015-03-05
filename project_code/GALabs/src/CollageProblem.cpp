@@ -107,8 +107,8 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 			tess.tessellateToMesh(line, OF_POLY_WINDING_ODD, mesh, true);
 
 			vector<ofVec3f>& verts = mesh.getVertices();
-			for (int i = 0; i < verts.size(); ++i) {
-				mesh.addTexCoord(ofVec2f(verts[i].x, verts[i].y));
+			for (int iv = 0; iv < verts.size(); ++iv) {
+				mesh.addTexCoord(ofVec2f(verts[iv].x, verts[iv].y));
 			}
 			mesh.disableColors();
 			mesh.disableNormals();

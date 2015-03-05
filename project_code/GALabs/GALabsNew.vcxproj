@@ -90,11 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\addons\ofxFatLines\src\ofxFatLine.cpp" />
-    <ClCompile Include="..\..\..\addons\ofxFatLines\src\sincosineLut.cpp" />
     <ClCompile Include="..\..\..\addons\ofxMSAInteractiveObject\src\ofxMSAInteractiveObject.cpp" />
-    <ClCompile Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxMesh2TriMesh.cpp" />
-    <ClCompile Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxPolyline2Mesh.cpp" />
     <ClCompile Include="..\..\..\addons\ofxSimpleGuiToo\src\Controls\ofxSimpleGuiButton.cpp" />
     <ClCompile Include="..\..\..\addons\ofxSimpleGuiToo\src\Controls\ofxSimpleGuiColorPicker.cpp" />
     <ClCompile Include="..\..\..\addons\ofxSimpleGuiToo\src\Controls\ofxSimpleGuiComboBox.cpp" />
@@ -167,11 +163,7 @@
     <ClCompile Include="src\TestProblem.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\addons\ofxFatLines\src\ofxFatLine.h" />
-    <ClInclude Include="..\..\..\addons\ofxFatLines\src\sincosineLut.h" />
     <ClInclude Include="..\..\..\addons\ofxMSAInteractiveObject\src\ofxMSAInteractiveObject.h" />
-    <ClInclude Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxMesh2TriMesh.h" />
-    <ClInclude Include="..\..\..\addons\ofxPolyline2Mesh\src\ofxPolyline2Mesh.h" />
     <ClInclude Include="..\..\..\addons\ofxSimpleGuiToo\src\Controls\ofxSimpleGuiButton.h" />
     <ClInclude Include="..\..\..\addons\ofxSimpleGuiToo\src\Controls\ofxSimpleGuiColorPicker.h" />
     <ClInclude Include="..\..\..\addons\ofxSimpleGuiToo\src\Controls\ofxSimpleGuiComboBox.h" />

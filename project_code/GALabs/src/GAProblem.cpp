@@ -33,7 +33,6 @@ float myMap01(float value, float outputMin, float outputMax, bool clamp) {
 }
 
 GAProblem::GAProblem() {
-	mRootDir = ofToDataPath("");
 	mCompMethod = 5;
 	mUseDna = true;
 	bFlattenAndSave = true;
