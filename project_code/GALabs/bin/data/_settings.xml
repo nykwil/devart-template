@@ -21,19 +21,19 @@
     </Toggle_UseDna>
     <SliderInt_Times>
         <name>Times</name>
-        <value>0</value>
+        <value>1</value>
     </SliderInt_Times>
     <SliderInt_Repeat>
         <name>Repeat</name>
-        <value>16</value>
+        <value>10</value>
     </SliderInt_Repeat>
     <SliderInt_PopSize>
         <name>PopSize</name>
-        <value>85</value>
+        <value>196</value>
     </SliderInt_PopSize>
     <SliderInt_NGen>
         <name>NGen</name>
-        <value>70</value>
+        <value>192</value>
     </SliderInt_NGen>
     <Toggle_FlattenAndSave>
         <name>FlattenAndSave</name>

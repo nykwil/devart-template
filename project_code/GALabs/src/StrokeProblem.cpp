@@ -49,11 +49,11 @@ void StrokeProblem::setup() {
 
 void StrokeProblem::setRanges() {
 	mRanges.clear();
-	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // col
-	mRanges.push_back(RangeInfo(4, 0, 1.f)); // size
-	mRanges.push_back(RangeInfo(4, 0, 1.f)); // add
-	mRanges.push_back(RangeInfo(4, 0, 1.f)); // blend
-	mRanges.push_back(RangeInfo(4, 0, 1.f)); // alpha
+	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // COL
+	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // SIZE
+	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // SEED
+	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // BLEND
+	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // ALPHA
 
 	for (int in = 0; in < NUM_POINTS; ++in) {
 		mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // x
@@ -81,17 +81,24 @@ void StrokeProblem::createPixels(ofPixelsRef pixels, const vector<float>& values
 	ofBlendMode(OF_BLENDMODE_DISABLED);
 	baseImage.draw(0, 0);
 
+	float widthMin = -width * 0.25f;
+	float widthMax = width - widthMin;
+	float heightMin = -height * 0.25f;
+	float heightMax = height - heightMin;
+
 	int i = 0;
 	for (int is = 0; is < mRepeat; ++is) {
 		strip.clear();
 		strip.mFillColor = ColorLook::instance().getPalette(values[i++]); // COL
-		float sz = ofLerp(gMinSize, gMaxSize, values[i++]) * width; // SIZE
-		int seed = (int)(values[i++] * 10000.f);
+		float sz = ofLerp(gMinSize, gMaxSize, values[i++]); // SIZE
+		int seed = (int)(values[i++] * 10000.f); // SEED
 		int blend = (int)(values[i++] * 3); // BLEND
-		strip.mFillColor.a = (int)(values[i++] * 255);
+		strip.mFillColor.a = (int)(values[i++] * 255); // ALPHA
 
 		for (int in = 0; in < NUM_POINTS; ++in) {
-			strip.addVertex(ofVec3f(values[i++] * width, values[i++] * height, 0));		
+			float x = myMap01(values[i++], widthMin, widthMax);
+			float y = myMap01(values[i++], widthMin, widthMax);
+			strip.addVertex(ofVec3f(x, y, 0));
 		}
 		
 		if (blend == 0) {

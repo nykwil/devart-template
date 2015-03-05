@@ -37,7 +37,7 @@
     </Toggle_DrawOrigLine>
     <SliderFloat_DefaultWidth>
         <name>DefaultWidth</name>
-        <value>50.000000000</value>
+        <value>3.970000029</value>
     </SliderFloat_DefaultWidth>
     <SliderFloat_SmoothingSize>
         <name>SmoothingSize</name>
@@ -65,15 +65,19 @@
     </SliderFloat_AngStep>
     <SliderInt_WeiNum>
         <name>WeiNum</name>
-        <value>10</value>
+        <value>7</value>
     </SliderInt_WeiNum>
-    <SliderFloat_WeiScale>
-        <name>WeiScale</name>
-        <value>18.500000000</value>
-    </SliderFloat_WeiScale>
+    <SliderFloat_MinSize>
+        <name>MinSize</name>
+        <value>7.500000477</value>
+    </SliderFloat_MinSize>
+    <SliderFloat_MaxSize>
+        <name>MaxSize</name>
+        <value>69.500000000</value>
+    </SliderFloat_MaxSize>
     <SliderFloat_WeiAdd>
         <name>WeiAdd</name>
-        <value>0.579999983</value>
+        <value>0.550000012</value>
     </SliderFloat_WeiAdd>
     <SliderFloat_WeiNoise_>
         <name>WeiNoise </name>
