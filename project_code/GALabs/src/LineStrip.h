@@ -83,16 +83,18 @@ public:
 			}
 			mLine.getArea();
 			buildOutline(mLine);
-		}
 
-		mOutLine.close();
-		if (mOutSpacing > 0.01f) {
-			mOutLine = mOutLine.getResampledBySpacing(mOutSpacing);
-			mOutLine = mOutLine.getSmoothed(mOutSmoothingSize * mOutLine.size(), mSmoothingShape);
-		}
+			mOutLine.close();
+			if (mOutSpacing > 0.01f) {
+				mOutLine = mOutLine.getResampledBySpacing(mOutSpacing);
+				mOutLine = mOutLine.getSmoothed(mOutSmoothingSize * mOutLine.size(), mSmoothingShape);
+			}
 
-		mOutLine.simplify();
-		mTess.tessellateToMesh(mOutLine, OF_POLY_WINDING_NONZERO, mMesh);
+			mOutLine.simplify();
+			if (mOutLine.size() > 2) {
+				mTess.tessellateToMesh(mOutLine, OF_POLY_WINDING_NONZERO, mMesh);
+			}
+		}
 	}
 
 	void buildOutline(const ofPolyline& line) {

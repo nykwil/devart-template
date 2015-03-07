@@ -11,12 +11,13 @@ float StrokeProblem::gMinSize = 5;
 float StrokeProblem::gMaxSize = 5;
 float StrokeProblem::gRotation = 1;
 
-const int NUM_POINTS = 5;
+const int NUM_POINTS = 3;
 
 static LineStrip strip;
-static int mWeiNum = 10;
-static float mWeiAdd = 1.f;
-static float mWeiNoise = 0.1f;
+
+static float mWeiStart = 10;
+static float mWeiDist = 1.f;
+static float mWeiEnd = 0.1f;
 
 StrokeProblem::StrokeProblem() : GAProblem() {
 	gui.addPage("Stroke");
@@ -36,11 +37,11 @@ StrokeProblem::StrokeProblem() : GAProblem() {
 	gui.addSlider("OutSmoothingSize", strip.mOutSmoothingSize, 0.f, 1.f);
 	gui.addSlider("OutSpacing", strip.mOutSpacing, 0, 100.f);
 	gui.addSlider("AngStep", strip.mAngStep, 0.01f, TWO_PI);
-	gui.addSlider("WeiNum", mWeiNum, 3, 30);
 	gui.addSlider("MinSize", gMinSize, 0.f, 100.f);
 	gui.addSlider("MaxSize", gMaxSize, 0.f, 100.f);
-	gui.addSlider("WeiAdd", mWeiAdd, 0.f, 2.f);
-	gui.addSlider("WeiNoise ", mWeiNoise , 0.001f, 2.f);
+	gui.addSlider("WeiStart", mWeiStart, 0.f, 20.f);
+	gui.addSlider("WeiDist", mWeiDist, 0.f, 20.f);
+	gui.addSlider("WeiEnd ", mWeiEnd , 0.0f, 20.f);
 }
 
 void StrokeProblem::setup() {
@@ -50,16 +51,22 @@ void StrokeProblem::setup() {
 void StrokeProblem::setRanges() {
 	mRanges.clear();
 	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // COL
-	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // SIZE
+	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // MINSIZE
+	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // MAXSIZE
 	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // SEED
 	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // BLEND
 	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // ALPHA
 
+	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // x
+	mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // y
+
 	for (int in = 0; in < NUM_POINTS; ++in) {
-		mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // x
-		mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // y
+		mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // DIR
+		mRanges.push_back(RangeInfo(4, 0.f, 1.f)); // DIST
 	}
 }
+
+// weight is a function of size and length
 
 void StrokeProblem::createPixels(ofPixelsRef pixels, const vector<float>& values, ofImage& baseImage, int width, int height) {
 	assert(values.size() == mRanges.size() * mRepeat);
@@ -86,40 +93,60 @@ void StrokeProblem::createPixels(ofPixelsRef pixels, const vector<float>& values
 	float heightMin = -height * 0.25f;
 	float heightMax = height - heightMin;
 
+	float minDist =  width * 0.001f;
+	float maxDist = width * 0.25f;
+
 	int i = 0;
 	for (int is = 0; is < mRepeat; ++is) {
 		strip.clear();
 		strip.mFillColor = ColorLook::instance().getPalette(values[i++]); // COL
-		float sz = ofLerp(gMinSize, gMaxSize, values[i++]); // SIZE
+		float minSize = ofLerp(gMinSize, gMaxSize, values[i++]); // MINSIZE
+		float maxSize = ofLerp(gMinSize, gMaxSize, values[i++]); // MAXSIZE
 		int seed = (int)(values[i++] * 10000.f); // SEED
 		int blend = (int)(values[i++] * 3); // BLEND
 		strip.mFillColor.a = (int)(values[i++] * 255); // ALPHA
+		strip.mWeight.clear();
 
-		for (int in = 0; in < NUM_POINTS; ++in) {
-			float x = myMap01(values[i++], widthMin, widthMax);
-			float y = myMap01(values[i++], widthMin, widthMax);
-			strip.addVertex(ofVec3f(x, y, 0));
-		}
+		float x = values[i++];
+		float y = values[i++];
+
+		ofVec3f v = ofVec3f(ofLerp(widthMin, widthMax, x), 
+			ofLerp(heightMin, heightMax, y), 
+			0.0f);
+
+
+		strip.mWeight.push_back(ofLerp(minSize, maxSize, ofRandom(1.f)) * (width / 600.f) * mWeiStart);
+		strip.addVertex(v);
 		
+		ofSeedRandom(seed);
+		for (int in = 0; in < NUM_POINTS; ++in) {
+			float dir = ofLerp(-PI, PI, values[i++]); // DIR
+			float dist = ofLerp(minDist, maxDist, values[i++]); // DIST
+			v += ofVec3f(sin(dir), cos(dir), 0) * dist;
+
+			strip.mWeight.push_back(ofLerp(minSize, maxSize, ofRandom(1.f)) * 
+				(width / 600.f) * 
+				(mWeiDist / dist) *
+				(mWeiEnd * (1.0f - (float)in / (float)NUM_POINTS))
+				);
+			
+			strip.addVertex(v);
+		}
+
 		if (blend == 0) {
-			ofBlendMode(OF_BLENDMODE_ADD);
+			ofEnableBlendMode(OF_BLENDMODE_ADD);
 		}
 		else if (blend == 1) {
-			ofBlendMode(OF_BLENDMODE_SUBTRACT);
+			ofEnableBlendMode(OF_BLENDMODE_SUBTRACT);
 		}
 		else if (blend == 2) {
-			ofBlendMode(OF_BLENDMODE_ALPHA);
+			ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 		}
 		else if (blend == 3) {
-			ofBlendMode(OF_BLENDMODE_SCREEN);
-		}
-
-		strip.mWeight.clear();
-		ofSeedRandom(seed);
-		for (int i = 0; i < mWeiNum; ++i) {
-			strip.mWeight.push_back((mWeiAdd + ofRandom(1.f)) * sz * (width / 600.f));
+			ofEnableBlendMode(OF_BLENDMODE_SCREEN);
 		}
 		strip.draw();
+		ofDisableAlphaBlending();
 	}
 
 	fbo.end();

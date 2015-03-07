@@ -25,10 +25,11 @@ static ofImage baseImage;
 static bool terrible = false;
 
 static LineStrip strip;
-static int mWeiNum = 10;
+
+static int mWeiStart = 10;
 static float mWeiScale = 10.f;
-static float mWeiAdd = 1.f;
-static float mWeiNoise = 0.1f;
+static float mWeiDist = 1.f;
+static float mWeiEnd = 0.1f;
 
 static string rootDir;
 static string algorithm;
@@ -109,10 +110,10 @@ void ofApp::setup() {
 		gui.addSlider("OutSmoothingSize", strip.mOutSmoothingSize, 0.f, 1.f);
 		gui.addSlider("OutSpacing", strip.mOutSpacing, 0, 100.f);
 		gui.addSlider("AngStep", strip.mAngStep, 0.01f, TWO_PI);
-		gui.addSlider("WeiNum", mWeiNum, 3, 30);
+		gui.addSlider("WeiNum", mWeiStart, 3, 30);
 		gui.addSlider("WeiScale", mWeiScale, 0.f, 100.f);
-		gui.addSlider("WeiAdd", mWeiAdd, 0.f, 2.f);
-		gui.addSlider("WeiNoise ", mWeiNoise , 0.001f, 2.f);
+		gui.addSlider("WeiAdd", mWeiDist, 0.f, 2.f);
+		gui.addSlider("WeiNoise ", mWeiEnd , 0.001f, 2.f);
 
 		strip.addVertex(ofVec3f(100, 500, 0));
 		strip.addVertex(ofVec3f(300, 100, 0));
@@ -134,6 +135,7 @@ void ofApp::setup() {
 	gui.setup();
 	gui.loadFromXML();
 	gui.setDefaultKeys(true);
+	gui.setDraw(true);
 
 	if (!terrible) {
 		mDna->mRootDir = ofToDataPath(rootDir);
@@ -245,8 +247,8 @@ void ofApp::keyPressed(int key) {
 	else if (key == 'o') {
 		strip.mWeight.clear();
 		float f = ofRandom(1.f);
-		for (int i = 0; i < mWeiNum; ++i) {
-			strip.mWeight.push_back((mWeiAdd + ofRandom(1.f)) * mWeiScale);
+		for (int i = 0; i < mWeiStart; ++i) {
+			strip.mWeight.push_back((mWeiDist + ofRandom(1.f)) * mWeiScale);
 		}
 	}
 	else if (key == 'i') {
