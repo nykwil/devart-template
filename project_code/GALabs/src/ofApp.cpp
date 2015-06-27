@@ -186,27 +186,32 @@ void ofApp::draw() {
 		if (bRun && !mDna->isThreadRunning()) {
 			mDna->go();
 
-			ofEnableBlendMode(OF_BLENDMODE_DISABLED);
-			ofSetColor(255);
-
 			if (bDrawAll) {
 				mDna->getCompImg(imgComp);
 				if (imgComp.getWidth() > 0) {
+					ofDisableBlendMode();
+					ofSetColor(255, 255, 255 ,255);
 					imgComp.draw(0, 0, width, height);
 					ofDrawBitmapString("Comp", 0, 10);
 				}	
 
 				mDna->getWorkImg(imgWork);
 				if (imgWork.getWidth() > 0) {
+					ofEnableBlendMode(OF_BLENDMODE_DISABLED);
+					ofSetColor(255);
 					imgWork.draw(width, 0, width, height);
 					ofDrawBitmapString("Work", width, 10);
 				}	
 
+				ofEnableBlendMode(OF_BLENDMODE_DISABLED);
+				ofSetColor(255);
 				mDna->mImgOrig.draw(0, height, width, height + 10);
 				ofDrawBitmapString("Orig", 0, height);
 
 				mDna->getFinalImg(imgFinal);
 				if (imgFinal.getWidth() > 0) {
+					ofEnableBlendMode(OF_BLENDMODE_DISABLED);
+					ofSetColor(255);
 					imgFinal.draw(width, height, width, height);
 					ofDrawBitmapString("Final", width, height + 10);
 				}	
@@ -214,6 +219,8 @@ void ofApp::draw() {
 			else {
 				mDna->getFinalImg(imgFinal);
 				if (imgFinal.getWidth() > 0) {
+					ofEnableBlendMode(OF_BLENDMODE_DISABLED);
+					ofSetColor(255);
 					imgFinal.draw(0, 0, mDna->mFinalWidth, mDna->mFinalHeight);
 				}	
 			}

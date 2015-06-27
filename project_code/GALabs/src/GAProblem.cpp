@@ -98,7 +98,7 @@ void GAProblem::setup() {
 			}
 			else {
 				img = mImgOrig;
-				img.resize(1,1);
+//				img.resize(1,1);
 			}
 		}
 	}
@@ -327,7 +327,7 @@ void GAProblem::pushValuesFinal(const vector<float>& values, const ofPixelsRef p
 void GAProblem::updateWorkImage()
 {
 	static int iter = 0;
-	if (iter % ITERS_PER_UPDATE == 0 && mutexWork.tryLock())
+	if (iter % ITERS_PER_UPDATE == 0 && mutexWork.try_lock())
 	{
 		_mImgWork.setFromPixels(mWorkingPixels);
 		mutexWork.unlock();
@@ -375,9 +375,8 @@ float GAProblem::compColorDelta(ofImage &imgNew)
 {
 	updateCompImage(imgNew);
 
-	combinable<float> sum;
-	parallel_for(int(0), (int)(imgNew.getWidth() * imgNew.getHeight()), [&](int i)
-	{
+	float sum = 0;
+	for(int i = 0; i < (imgNew.getWidth() * imgNew.getHeight()); ++i) {
 		ofFloatColor c1 = mImgCompare.getColor(i);
 		ofFloatColor c2 = imgNew.getColor(i);
 
@@ -385,9 +384,23 @@ float GAProblem::compColorDelta(ofImage &imgNew)
 			ColorRGB(c1.r, c1.g, c1.b, false).toLinearRGB().toXYZ().toLab(),
 			ColorRGB(c2.r, c2.g, c2.b, false).toLinearRGB().toXYZ().toLab()
 			);
-		sum.local() += ColorLook::instance().getMaxDelta() - delta;
-	});
-	return sum.combine(plus<float>());
+		sum += ColorLook::instance().getMaxDelta() - delta;
+	}
+	return sum;
+
+// 	combinable<float> sum;
+// 	parallel_for(int(0), (int)(imgNew.getWidth() * imgNew.getHeight()), [&](int i)
+// 	{
+// 		ofFloatColor c1 = mImgCompare.getColor(i);
+// 		ofFloatColor c2 = imgNew.getColor(i);
+// 
+// 		float delta = ColorCompare::deltaE1976(
+// 			ColorRGB(c1.r, c1.g, c1.b, false).toLinearRGB().toXYZ().toLab(),
+// 			ColorRGB(c2.r, c2.g, c2.b, false).toLinearRGB().toXYZ().toLab()
+// 			);
+// 		sum.local() += ColorLook::instance().getMaxDelta() - delta;
+// 	});
+// 	return sum.combine(plus<float>());
 }
 
 float GAProblem::compLookup(ofImage &imgNew)

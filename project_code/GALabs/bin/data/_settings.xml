@@ -29,11 +29,11 @@
     </SliderInt_Repeat>
     <SliderInt_PopSize>
         <name>PopSize</name>
-        <value>196</value>
+        <value>2</value>
     </SliderInt_PopSize>
     <SliderInt_NGen>
         <name>NGen</name>
-        <value>192</value>
+        <value>6</value>
     </SliderInt_NGen>
     <Toggle_FlattenAndSave>
         <name>FlattenAndSave</name>

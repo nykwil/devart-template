@@ -7,20 +7,21 @@
 float myMap01(float value, float outputMin, float outputMax, bool clamp); 
 float myMap01(float value, float outputMin, float outputMax); 
 
-class GAProblem : public ofThread 
+class GAProblem // : public ofThread 
 {
 public:
     GAProblem();
 	string mRootDir;
 	void pickBest(ofImage& mImg1, ofImage& mImg2);
 	float fitnessTest(const vector<float>& values);
+	bool isThreadRunning() { return false; }
 
 	void updateWorkImage();
 	template<typename T>
 	void updateCompImage(T& imgCmp)
 	{
 		static int iter = 0;
-		if (iter % ITERS_PER_UPDATE == 0 && mutexComp.tryLock())
+		if (iter % ITERS_PER_UPDATE == 0 && mutexComp.try_lock())
 		{
 			_mImgComp.setFromPixels(imgCmp.getPixels());
 			mutexComp.unlock();

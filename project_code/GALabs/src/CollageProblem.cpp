@@ -89,9 +89,9 @@ void ImageCache::createBlobCvGray(ofxCvGrayscaleImage& cvImg) {
 		ofRectangle& rect = contourFinder.blobs[i].boundingRect;
 
 		bool onEdge = rect.getLeft() < 2 || 
-			image.width - rect.getRight() < 2 ||
+			image.getWidth() - rect.getRight() < 2 ||
 			rect.getTop() < 2 ||
-			image.height - rect.getBottom() < 2;
+			image.getHeight() - rect.getBottom() < 2;
 
 		if (mExportFiles || !onEdge) {
 			ofPolyline line;
@@ -275,7 +275,7 @@ void CollageProblem::createPixels(ofPixelsRef pixResult, const vector<float>& va
 			ofTranslate(x, y);
 			ofRotateZ(deg);
 			ofScale(scale, scale, scale);
-			tex.draw(-tex.width / 2, -tex.height / 2);
+			tex.draw(-tex.getWidth() / 2, -tex.getHeight() / 2);
 			ofPopMatrix();
 		}
 	}
@@ -313,7 +313,7 @@ void CollageProblem::debugDraw() {
 		ofTranslate(x, y);
 		ofRotateZ(deg);
 		ofScale(scale, scale, scale);
-		ofTranslate(-tex.width / 2, -tex.height / 2);
+		ofTranslate(-tex.getWidth() / 2, -tex.getHeight() / 2);
 		tex.draw(0, 0);
 		ofPopMatrix();
 
